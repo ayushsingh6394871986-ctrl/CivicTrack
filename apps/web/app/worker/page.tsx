@@ -98,7 +98,7 @@ export default function WorkerDashboardPage() {
     );
   }
 
-  const isWorker = user?.role === 'worker' || user?.role === 'department_staff' || user?.role === 'admin';
+  const isWorker = user?.role === 'worker';
 
   if (!isWorker) {
     return (

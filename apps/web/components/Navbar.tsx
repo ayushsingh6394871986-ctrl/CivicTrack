@@ -42,7 +42,7 @@ export default function Navbar() {
     setMounted(true);
   }, []);
 
-  const isWorker = user?.role === 'worker' || user?.role === 'department_staff' || isAdmin;
+  const isWorker = user?.role === 'worker';
 
   const navLinks = [
     { href: '/my-complaints', label: 'My Reports', icon: FileText },
