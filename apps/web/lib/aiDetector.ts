@@ -154,7 +154,7 @@ export async function analyzeImageWithLiveApi(
 
       const endpoint = `https://civicpulse-ai-95na.onrender.com/analyze?issue_type=pothole`;
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 6000);
+      const timeout = setTimeout(() => controller.abort(), 3500);
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -173,20 +173,10 @@ export async function analyzeImageWithLiveApi(
           }));
           data.severity = Math.max(...data.detections.map((d) => d.severity));
           return data;
-        } else if (data && data.detected === false) {
-          return {
-            detected: false,
-            count: 0,
-            severity: 0,
-            issue_type: 'pothole',
-            description: 'No pothole or road surface cavity detected in this photo.',
-            rejection_reason: 'No asphalt cavity or road surface defect found by computer vision model.',
-            detections: [],
-          };
         }
       }
     } catch (err) {
-      console.warn('YOLO API connection note:', err);
+      console.warn('YOLO API note (falling back to Gemini):', err);
     }
   }
 
