@@ -18,8 +18,9 @@ import EvidenceModal from '@/components/EvidenceModal';
 import { INITIAL_ISSUES } from '@/lib/seedData';
 
 export default function HomePage() {
+  const [mounted, setMounted] = useState(false);
   const [issues, setIssues] = useState<CivicIssue[]>(INITIAL_ISSUES);
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(getDashboardMetrics());
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [searchComplaint, setSearchComplaint] = useState('');
 
   const [selectedIssueForEvidence, setSelectedIssueForEvidence] = useState<CivicIssue | null>(null);
@@ -31,6 +32,7 @@ export default function HomePage() {
   };
 
   useEffect(() => {
+    setMounted(true);
     loadData();
     const handleStoreUpdate = () => loadData();
     if (typeof window !== 'undefined') {
@@ -43,8 +45,6 @@ export default function HomePage() {
     };
   }, []);
 
-
-
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchComplaint.trim()) window.location.href = `/track/${searchComplaint.trim()}`;
@@ -54,6 +54,8 @@ export default function HomePage() {
     e.preventDefault(); e.stopPropagation();
     upvoteIssue(id); loadData();
   };
+
+  if (!mounted) return null;
 
   const sortedIssues: SortedCivicIssue[] = sortIssuesByNearest(
     userLocation.latitude, userLocation.longitude, issues

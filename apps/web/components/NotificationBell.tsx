@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Bell, AlertTriangle, CheckCircle, Clock, ExternalLink } from 'lucide-react';
@@ -7,10 +7,12 @@ import { NotificationItem } from '../lib/types';
 import Link from 'next/link';
 
 export default function NotificationBell() {
+  const [mounted, setMounted] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     setNotifications(getStoredNotifications());
     const handleStorage = () => setNotifications(getStoredNotifications());
     window.addEventListener('storage', handleStorage);
@@ -44,7 +46,7 @@ export default function NotificationBell() {
         aria-label="Civic Notifications"
       >
         <Bell className="w-4 h-4 text-[#D95F02]" />
-        {unreadCount > 0 && (
+        {mounted && unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#D95F02] text-[9px] font-extrabold text-white shadow-md">
             {unreadCount}
           </span>

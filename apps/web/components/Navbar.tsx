@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -31,11 +31,16 @@ import ProfileModal from './ProfileModal';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const userLocation = useUserLocation();
   const { user, isAdmin, signOut } = useAuth();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const navLinks = [
     { href: '/my-complaints', label: 'My Reports', icon: FileText },
@@ -116,7 +121,7 @@ export default function Navbar() {
             </div>
 
             {/* User Profile / Auth */}
-            {user ? (
+            {mounted && user ? (
               <button
                 type="button"
                 onClick={() => setProfileOpen(true)}
@@ -143,11 +148,11 @@ export default function Navbar() {
                     {user.displayName || user.email?.split('@')[0]}
                   </span>
                   <span className="text-[9px] font-black tracking-wider uppercase text-emerald-600 dark:text-emerald-400 mt-0.5">
-                    {isAdmin ? 'ADMIN' : 'CITIZEN'}
+                    {isAdmin ? 'ADMIN' : user.role === 'worker' ? 'WORKER' : 'CITIZEN'}
                   </span>
                 </div>
               </button>
-            ) : (
+            ) : mounted && !user ? (
               <button
                 type="button"
                 onClick={() => setLoginOpen(true)}
@@ -156,6 +161,8 @@ export default function Navbar() {
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Login</span>
               </button>
+            ) : (
+              <div className="w-16 h-8" />
             )}
 
             {/* Mobile Menu Trigger */}
