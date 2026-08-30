@@ -42,10 +42,12 @@ export default function Navbar() {
     setMounted(true);
   }, []);
 
+  const isWorker = user?.role === 'worker' || user?.role === 'department_staff' || isAdmin;
+
   const navLinks = [
     { href: '/my-complaints', label: 'My Reports', icon: FileText },
     { href: '/civic-score', label: 'Civic Score', icon: Award },
-    { href: '/worker', label: 'Worker Hub', icon: HardHat },
+    ...(isWorker ? [{ href: '/worker', label: 'Worker Hub', icon: HardHat }] : []),
     { href: '/department', label: 'Resolver', icon: Wrench },
     { href: '/map', label: 'GIS Map', icon: Map },
     { href: '/dashboard', label: 'SLA Board', icon: BarChart3 },

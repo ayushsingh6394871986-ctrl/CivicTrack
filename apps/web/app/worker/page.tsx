@@ -28,7 +28,9 @@ import {
   Flame,
   CheckSquare,
   Activity,
-  Layers
+  Layers,
+  Loader2,
+  Lock
 } from 'lucide-react';
 import { getStoredIssues, updateIssueStatus, saveStoredIssues } from '@/lib/store';
 import { fetchIssues } from '@/lib/db';
@@ -48,7 +50,7 @@ export default function WorkerDashboardPage() {
   const [inProgressMap, setInProgressMap] = useState<Record<string, boolean>>({});
 
   const userLocation = useUserLocation();
-  const { user } = useAuth();
+  const { user, loading, signInAsDemo } = useAuth();
 
   const loadIssues = async () => {
     const localIssues = getStoredIssues();
@@ -85,7 +87,60 @@ export default function WorkerDashboardPage() {
     };
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted || loading) {
+    return (
+      <div className="max-w-md mx-auto py-24 text-center space-y-3 animate-in fade-in">
+        <Loader2 className="w-8 h-8 text-emerald-600 animate-spin mx-auto" />
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-bold">
+          Verifying sanitation crew credentials...
+        </p>
+      </div>
+    );
+  }
+
+  const isWorker = user?.role === 'worker' || user?.role === 'department_staff' || user?.role === 'admin';
+
+  if (!isWorker) {
+    return (
+      <div className="max-w-md mx-auto py-16 px-4 text-center space-y-6 animate-in fade-in">
+        <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-500 to-emerald-600 text-white flex items-center justify-center mx-auto shadow-xl">
+          <HardHat className="w-8 h-8" />
+        </div>
+        <div className="space-y-2">
+          <div className="inline-flex items-center space-x-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 rounded-full text-xs font-black text-amber-800 dark:text-amber-300">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Field Workforce Portal</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            Sanitation Worker Hub
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+            This dashboard is restricted to municipal sanitation workers, contractors, and field crew supervisors. Please authenticate with your Worker Badge.
+          </p>
+        </div>
+
+        <div className="space-y-3 pt-2">
+          <button
+            type="button"
+            onClick={async () => {
+              await signInAsDemo('worker');
+            }}
+            className="w-full inline-flex items-center justify-center space-x-2.5 px-6 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm rounded-2xl shadow-lg shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer"
+          >
+            <HardHat className="w-5 h-5" />
+            <span>Login as Sanitation Lead (#MC-SWM-882)</span>
+          </button>
+
+          <Link
+            href="/"
+            className="block text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 py-2"
+          >
+            ← Return to Citizen Portal
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // Sort issues nearest to farthest relative to user's live GPS coordinates
   const sortedIssues: SortedCivicIssue[] = sortIssuesByNearest(
