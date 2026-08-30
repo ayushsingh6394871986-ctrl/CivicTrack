@@ -177,18 +177,22 @@ export default function ReportForm() {
       setLiveApiData(apiResponse);
     }
 
-    if (result.category && result.category !== category) {
+    if (result.is_civic_issue && result.category && result.category !== category) {
       setCategory(result.category);
     }
 
-    if (!description) {
+    if (result.is_civic_issue && !description) {
       const found = CATEGORIES.find(c => c.id === (result.category || category));
       if (found) setDescription(found.defaultDesc);
     }
 
     const areaName = resolvedAddress?.road || resolvedAddress?.suburb || resolvedAddress?.city || 'Local Area';
-    const issueLabel = apiResponse?.issue_type ? apiResponse.issue_type.toUpperCase() : result.detected_class;
-    setTitle(`${issueLabel} near ${areaName}`);
+    if (result.is_civic_issue && result.detected_class !== 'Non-Civic Image (Rejected)') {
+      const issueLabel = apiResponse?.issue_type && apiResponse.issue_type !== 'invalid_non_defect'
+        ? apiResponse.issue_type.toUpperCase().replace(/_/g, ' ')
+        : result.detected_class;
+      setTitle(`${issueLabel} near ${areaName}`);
+    }
   };
 
   const handleMergeDuplicate = (targetIssueId: string) => {

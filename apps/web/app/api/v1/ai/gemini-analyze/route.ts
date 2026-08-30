@@ -48,47 +48,57 @@ export async function POST(req: NextRequest) {
 
     // ── If Gemini API key is present, call Google Gemini Vision API ─────────
     if (apiKey) {
-      const prompt = `You are an expert Municipal Infrastructure Safety Inspector and Computer Vision Verifier for CivicTrack.
-The citizen reported an infrastructure problem with category: "${issueType}".
-Citizen Description: "${description || 'None provided'}".
+      const prompt = `You are an expert AI Municipal Infrastructure Auditor and Computer Vision Verifier for CivicTrack.
+Your job is to inspect the submitted photo with HIGH PRECISION and determine whether it contains a REAL, VALID outdoor public municipal infrastructure defect.
 
-TASK 1: VISUAL CLASSIFICATION & DEFECT VERIFICATION
-Carefully inspect the submitted image:
-- VALID DEFECTS (Mark "detected": true, "is_civic_issue": true):
-  * Road Defects / Potholes: Any road cavities, craters, water-filled potholes, asphalt erosion, depression cavities, broken concrete/tarmac, uneven dirt/gravel road damage, surface sinkholes.
-  * Streetlights: Broken, shattered, unlit, dark street, missing bulb, bent pole.
-  * Traffic / Road: Blind corners, blocked vision intersections, missing road signs.
-  * Sanitation: Garbage dumps, overflowing bins, open waste, dead animals.
-  * Water: Water leakage, pipe bursts, flooded streets, water logging.
-  * Safety: Exposed/dangling wires, missing manhole covers, lack of security/CCTV in public zone, overgrown vegetation/bushes blocking walking paths.
+STRICT CLASSIFICATION RULES:
 
-- INVALID / NON-INFRASTRUCTURE (Mark "detected": false, "is_civic_issue": false, "severity": 0):
-  * Handwritten paper, notebook text, documents, printed paper.
-  * Human selfies, facial portraits, people posing.
-  * Indoor domestic rooms (living room, bedroom, indoor kitchen, office desk).
-  * Food, drinks, snacks, meals.
-  * Domestic pets, cats, dogs.
-  * Smooth, pristine, undamaged roads with zero defects.
-  * Memes, drawings, digital artwork, computer screenshots.
+1. REJECT INVALID / NON-CIVIC IMAGES (MUST RETURN detected: false, is_civic_issue: false, severity: 0):
+- Human selfies, human faces, portraits, people, bodies, clothing.
+- Indoor domestic rooms (bedrooms, living rooms, kitchens, offices, ceilings, tiles).
+- Handwritten or printed papers, documents, books, notebooks, ID cards, receipts.
+- Electronic screens, laptops, phones, computer monitors.
+- Food, beverages, plates, snacks.
+- Pets, domestic animals.
+- Clean, undamaged, smooth pavements or roads with zero defects.
+- Random objects (chairs, bags, pens, shoes, walls).
+For ANY of the above:
+  "detected": false,
+  "is_civic_issue": false,
+  "severity": 0,
+  "confidence": 0.0,
+  "issue_type": "invalid_non_defect",
+  "description": "Non-civic image detected (e.g. person, indoor room, paper, or non-infrastructure object). No municipal defect found.",
+  "rejection_reason": "No valid public infrastructure defect detected in this photo.",
+  "hazards_detected": []
 
-TASK 2: SEVERITY SCORING (1 to 100)
-If this is a valid defect:
-- Calculate a realistic severity score between 1 and 100:
-  * 1-30 (Low Risk): Minor superficial defect or small inconvenience.
-  * 31-60 (Moderate Risk): Noticeable public inconvenience or vehicle slowdown.
-  * 61-80 (High Risk): Significant hazard (e.g. deep pothole cavity, water-filled pothole causing skidding, blind intersection, broken street lighting).
-  * 81-100 (Critical / Life Threat): Immediate danger (e.g. exposed 440V wires, open deep manhole, collapsed roadway).
-- "hazards_detected": Array of 2 to 4 specific visual observations (e.g. ["Deep water-filled road cavity", "Vehicle tire damage risk", "Pedestrian trip hazard"]).
-- "description": Professional 1-2 sentence engineering assessment.
-- "confidence": Float between 0.88 and 0.99.
+2. ACCEPT ONLY REAL MUNICIPAL DEFECTS (MUST RETURN detected: true, is_civic_issue: true):
+Inspect and assign the EXACT matching category from this list:
+- "pothole": Road crater, asphalt cavity, broken tarmac depression, gravel pit in street.
+- "garbage": Open municipal waste heap, overflowing public dumpster, scattered trash on street.
+- "streetlight": Broken, unlit, dark lamp post, shattered fixture, dangling pole.
+- "water_logging": Stagnant flood water, submerged road/street, clogged monsoon drain.
+- "water_leakage": Broken underground pipeline spewing water, open hydrant leak.
+- "exposed_wires": Dangling live electrical cables, open junction box, spark risk.
+- "fallen_tree": Tree or heavy branch blocking public road/pathway.
+- "broken_footpath": Broken pedestrian sidewalk pavers, cracked curb, displaced slabs.
+- "manhole": Open, uncovered, or shattered sewer manhole chamber.
+- "dead_animal": Animal carcass on public street requiring sanitary disposal.
+- "overgrown_bushes": Wild vegetation blocking pedestrian walkway or street visibility.
 
-Respond ONLY with a valid JSON object without markdown formatting or code blocks:
+3. SEVERITY RATING (1 to 100):
+- 1-35: Minor superficial damage, low risk.
+- 36-65: Moderate defect, noticeable inconvenience.
+- 66-85: High severity (deep cavity, water logging, broken street lighting at night).
+- 86-100: Critical / Emergency life hazard (exposed wires, open sewer manhole, collapsed roadway).
+
+Respond ONLY with a valid JSON object without markdown formatting:
 {
   "detected": boolean,
   "is_civic_issue": boolean,
   "severity": number,
   "confidence": number,
-  "issue_type": "${issueType}",
+  "issue_type": string,
   "description": string,
   "hazards_detected": string[],
   "rejection_reason": string | null

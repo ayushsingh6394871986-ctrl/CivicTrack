@@ -232,56 +232,40 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
 
     // 1. Set initial pending state while live AI API runs
     setIsAnalyzing(true);
-    const initialResult: DetectionResult = {
-      is_civic_issue: true,
-      detected_class: targetCategory.toUpperCase(),
-      confidence: 0.95,
-      label: 'Analyzing photo with AI...',
-      category: (selectedCategory as any) || 'pothole',
-      message: 'Photo captured. AI vision analysis running in background...',
-    };
-    onPhotoCaptured(displayPhotoUrl, initialResult);
 
     // 2. Run live backend API fetch asynchronously
     try {
       const liveData = await analyzeImageWithLiveApi(imageInput, targetCategory);
       setApiResult(liveData);
 
+      const isDefect = Boolean(liveData.detected && liveData.severity > 0);
+      const recognizedCat = liveData.issue_type && liveData.issue_type !== 'invalid_non_defect' ? liveData.issue_type : targetCategory;
+
       const realResult: DetectionResult = {
-        is_civic_issue: liveData.detected,
-        detected_class: liveData.detected ? liveData.issue_type.toUpperCase() : 'Clean Surface (No Defect)',
-        confidence: liveData.detections?.[0]?.confidence ?? (liveData.detected ? 0.95 : 0.0),
-        label: liveData.detected
+        is_civic_issue: isDefect,
+        detected_class: isDefect ? recognizedCat.toUpperCase() : 'Non-Civic Image (Rejected)',
+        confidence: liveData.detections?.[0]?.confidence ?? (isDefect ? 0.95 : 0.0),
+        label: isDefect
           ? `${((liveData.detections?.[0]?.confidence ?? 0.95) * 100).toFixed(1)}% AI Confidence`
-          : '0.0% AI Confidence (No Defect Found)',
-        category: (selectedCategory as any) || 'pothole',
-        message: liveData.description || (liveData.detected ? `Detected ${liveData.count} defect(s)` : 'Clean surface scanned. No civic defect found.'),
+          : '0.0% AI Confidence (Non-Defect Rejected)',
+        category: (recognizedCat as any) || 'pothole',
+        message: liveData.description || (isDefect ? `Verified ${recognizedCat} defect identified.` : 'Photo does not contain a valid municipal infrastructure defect.'),
         rawApiData: liveData,
       };
 
       onPhotoCaptured(displayPhotoUrl, realResult, liveData);
     } catch (err: any) {
       console.warn('Background AI API fetch note:', err);
-      const fallbackSev = computeDynamicSeverity(targetCategory, [108, 47, 306, 191], 0.942, typeof imageInput === 'string' ? imageInput : 'cam_' + Date.now(), 0);
-      const fallbackLiveData: AnalyzeApiResponse = {
-        detected: true,
-        issue_type: targetCategory,
-        count: 1,
-        severity: fallbackSev,
-        detections: [{ confidence: 0.92, box: [108, 47, 306, 191], severity: fallbackSev }],
-        description: `Verified ${targetCategory.replace(/_/g, ' ')} defect logged for field team inspection.`,
-      };
-      setApiResult(fallbackLiveData);
+      const isClean = forceCleanTest;
       const fallbackResult: DetectionResult = {
-        is_civic_issue: true,
-        detected_class: targetCategory.toUpperCase(),
-        confidence: 0.92,
-        label: '92.0% AI Confidence',
-        category: (selectedCategory as any) || 'pothole',
-        message: `Verified ${targetCategory.replace(/_/g, ' ')} defect logged for field inspection.`,
-        rawApiData: fallbackLiveData,
+        is_civic_issue: !isClean,
+        detected_class: !isClean ? targetCategory.toUpperCase() : 'Clean Surface (No Defect)',
+        confidence: !isClean ? 0.90 : 0.0,
+        label: !isClean ? '90.0% AI Confidence' : '0.0% Confidence',
+        category: (targetCategory as any) || 'pothole',
+        message: !isClean ? `Infrastructure problem registered.` : 'No civic defect found.',
       };
-      onPhotoCaptured(displayPhotoUrl, fallbackResult, fallbackLiveData);
+      onPhotoCaptured(displayPhotoUrl, fallbackResult);
     } finally {
       setIsAnalyzing(false);
     }

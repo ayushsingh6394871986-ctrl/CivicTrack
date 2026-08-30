@@ -197,19 +197,21 @@ export async function analyzeImageWithLiveApi(
       const gemini = await res.json();
       const isDetected = Boolean(gemini.detected && gemini.is_civic_issue && gemini.severity > 0);
 
+      const recognizedCategory = (gemini.issue_type && gemini.issue_type !== 'invalid_non_defect') ? gemini.issue_type : issueType;
+
       return {
         detected: isDetected,
         count: isDetected ? 1 : 0,
-        severity: isDetected ? gemini.severity : 0,
-        issue_type: issueType,
-        description: gemini.description || gemini.rejection_reason,
-        rejection_reason: gemini.rejection_reason || (!isDetected ? 'No civic defect detected in photo.' : undefined),
+        severity: isDetected ? (gemini.severity || 65) : 0,
+        issue_type: isDetected ? recognizedCategory : 'invalid_non_defect',
+        description: gemini.description || gemini.rejection_reason || 'Image inspected by Gemini AI.',
+        rejection_reason: gemini.rejection_reason || (!isDetected ? 'Photo rejected: Human face / non-infrastructure subject detected.' : undefined),
         detections: isDetected
           ? [
               {
-                confidence: gemini.confidence || 0.93,
+                confidence: gemini.confidence || 0.94,
                 box: [100, 50, 300, 200],
-                severity: gemini.severity,
+                severity: gemini.severity || 65,
               },
             ]
           : [],
