@@ -12,7 +12,7 @@ import {
 import { auth, db, googleProvider } from './firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-export type UserRole = 'citizen' | 'department_staff' | 'admin' | 'superadmin' | 'super_admin';
+export type UserRole = 'citizen' | 'department_staff' | 'admin' | 'superadmin' | 'super_admin' | 'worker';
 
 export interface AppUser {
   id: string;
@@ -20,6 +20,7 @@ export interface AppUser {
   displayName: string | null;
   photoURL: string | null;
   role: UserRole;
+  workerBadgeId?: string;
 }
 
 const DEFAULT_SUPERADMINS = [
@@ -222,18 +223,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // 4. Instant Demo Citizen Login
+  // 4. Instant Demo Multi-Role Login (Worker / Citizen / Admin)
   const signInAsDemo = useCallback(async (customRole: UserRole = 'citizen') => {
-    const demoEmail = 'citizen.punjab@gov.in';
-    const demoName = 'Gurpreet Singh (Verified Citizen)';
-    const role = await fetchUserRoleFromFirestore(demoEmail, demoName);
+    let demoEmail = 'citizen.punjab@gov.in';
+    let demoName = 'Gurpreet Singh (Verified Citizen)';
+    let workerBadgeId: string | undefined = undefined;
+
+    if (customRole === 'worker' || customRole === 'department_staff') {
+      demoEmail = 'ramesh.worker@jaipurmc.org';
+      demoName = 'Ramesh Kumar (Swachhata Field Lead)';
+      workerBadgeId = 'MC-SWM-2026-882';
+    } else if (customRole === 'admin' || customRole === 'superadmin') {
+      demoEmail = 'admin@jaipurmc.org';
+      demoName = 'Er. Rajesh Meena (Zonal Executive Officer)';
+    }
 
     const appUser: AppUser = {
-      id: 'demo-citizen-uid-202',
+      id: `demo-${customRole}-uid-${Date.now()}`,
       email: demoEmail,
       displayName: demoName,
       photoURL: null,
-      role: role || customRole,
+      role: customRole,
+      workerBadgeId,
     };
     setUser(appUser);
     if (typeof window !== 'undefined') {

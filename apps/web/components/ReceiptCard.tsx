@@ -175,10 +175,19 @@ export default function ReceiptCard({ issue }: ReceiptCardProps) {
           </div>
 
           {qrDataUrl && (
-            <div className="p-1.5 bg-white border-2 border-[#1E2328]/20 rounded-xl shadow-md shrink-0">
+            <a
+              href={trackingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1.5 bg-white border-2 border-[#1E2328]/20 hover:border-emerald-500 rounded-xl shadow-md shrink-0 block transition-transform hover:scale-105 cursor-pointer group"
+              title="Click or Scan to Open Live Tracking Page"
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={qrDataUrl} alt={`QR Code for ${issue.complaint_number}`} className="w-20 h-20" />
-            </div>
+              <span className="block text-[8px] font-black text-center text-slate-500 group-hover:text-emerald-600 mt-0.5">
+                SCAN / CLICK
+              </span>
+            </a>
           )}
         </div>
 

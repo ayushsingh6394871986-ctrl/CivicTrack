@@ -12,7 +12,7 @@ interface LoginModalProps {
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [mounted, setMounted] = useState(false);
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, signInAsDemo } = useAuth();
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -128,7 +128,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 </div>
               )}
 
-              {/* GOOGLE SIGN IN BUTTON (ONLY OPTION) */}
+              {/* GOOGLE SIGN IN BUTTON */}
               <div className="space-y-3 pt-2">
                 <button
                   type="button"
@@ -164,8 +164,61 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 </button>
               </div>
 
+              {/* DEMO / HACKATHON JURY QUICK SWITCHER */}
+              <div className="pt-2 space-y-2.5">
+                <div className="flex items-center space-x-2 text-[10px] uppercase font-black text-slate-400">
+                  <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+                  <span>Instant Demo Roles (Hackathon Mode)</span>
+                  <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await signInAsDemo('worker');
+                      setIsSuccess(true);
+                      setTimeout(() => handleClose(), 900);
+                    }}
+                    className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900 border border-emerald-300 dark:border-emerald-700 rounded-2xl text-left transition-all active:scale-95 cursor-pointer"
+                  >
+                    <span className="text-base block">👷</span>
+                    <span className="text-[11px] font-black text-emerald-900 dark:text-emerald-200 block mt-0.5">Worker</span>
+                    <span className="text-[9px] text-emerald-700 dark:text-emerald-400 font-mono">#SWM-882</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await signInAsDemo('citizen');
+                      setIsSuccess(true);
+                      setTimeout(() => handleClose(), 900);
+                    }}
+                    className="p-2.5 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900 border border-blue-300 dark:border-blue-700 rounded-2xl text-left transition-all active:scale-95 cursor-pointer"
+                  >
+                    <span className="text-base block">👤</span>
+                    <span className="text-[11px] font-black text-blue-900 dark:text-blue-200 block mt-0.5">Citizen</span>
+                    <span className="text-[9px] text-blue-700 dark:text-blue-400 font-mono">Verified</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await signInAsDemo('admin');
+                      setIsSuccess(true);
+                      setTimeout(() => handleClose(), 900);
+                    }}
+                    className="p-2.5 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900 border border-purple-300 dark:border-purple-700 rounded-2xl text-left transition-all active:scale-95 cursor-pointer"
+                  >
+                    <span className="text-base block">🏛️</span>
+                    <span className="text-[11px] font-black text-purple-900 dark:text-purple-200 block mt-0.5">Admin</span>
+                    <span className="text-[9px] text-purple-700 dark:text-purple-400 font-mono">Zonal Exec</span>
+                  </button>
+                </div>
+              </div>
+
               {/* SECURITY BADGE */}
-              <div className="pt-2 text-center">
+              <div className="pt-1 text-center">
                 <div className="inline-flex items-center space-x-1.5 text-[11px] text-slate-400 font-medium">
                   <Lock className="w-3.5 h-3.5 text-slate-400" />
                   <span>Secure 256-bit encrypted authentication</span>

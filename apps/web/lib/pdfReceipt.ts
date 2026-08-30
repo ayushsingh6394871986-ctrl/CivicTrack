@@ -1,12 +1,12 @@
 import QRCode from 'qrcode';
 
 export function getOfficialTrackingUrl(complaintNumber: string): string {
-  let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!baseUrl && typeof window !== 'undefined') {
+  let baseUrl = '';
+  if (typeof window !== 'undefined' && window.location?.origin) {
     baseUrl = window.location.origin;
-  }
-  // If running locally, default QR code to the live Vercel URL so physical phones can scan it seamlessly!
-  if (!baseUrl || baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')) {
+  } else if (process.env.NEXT_PUBLIC_APP_URL) {
+    baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+  } else {
     baseUrl = 'https://civic-track-gules.vercel.app';
   }
   return `${baseUrl.replace(/\/$/, '')}/track/${encodeURIComponent(complaintNumber)}`;

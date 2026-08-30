@@ -19,7 +19,8 @@ import {
   User,
   ShieldAlert,
   Wrench,
-  Award
+  Award,
+  HardHat
 } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import ThemeToggle from './ThemeToggle';
@@ -39,6 +40,7 @@ export default function Navbar() {
   const navLinks = [
     { href: '/my-complaints', label: 'My Reports', icon: FileText },
     { href: '/civic-score', label: 'Civic Score', icon: Award },
+    { href: '/worker', label: 'Worker Hub', icon: HardHat },
     { href: '/department', label: 'Resolver', icon: Wrench },
     { href: '/map', label: 'GIS Map', icon: Map },
     { href: '/dashboard', label: 'SLA Board', icon: BarChart3 },
