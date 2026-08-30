@@ -276,7 +276,7 @@ export async function reverseGeocodeReal(latitude: number, longitude: number): P
   // If outside polygon, fetch real OSM address
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2500);
+    const timeout = setTimeout(() => controller.abort(), 4000);
 
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
@@ -310,8 +310,10 @@ export async function reverseGeocodeReal(latitude: number, longitude: number): P
         city_code: cityCode,
       };
     }
-  } catch (err) {
-    console.warn('OSM reverse geocoding note:', err);
+  } catch (err: any) {
+    if (err?.name !== 'AbortError') {
+      console.warn('OSM reverse geocoding note:', err?.message || err);
+    }
   }
 
   // Heuristic coordinate fallback

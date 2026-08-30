@@ -34,6 +34,15 @@ import {
 import { INITIAL_ISSUES, INITIAL_STATUS_HISTORY, INITIAL_EVIDENCE, INITIAL_NOTIFICATIONS } from './seedData';
 import { ZONE_BUDGETS } from './budgetData';
 
+// Helper to strip undefined values so Firestore setDoc / updateDoc never throws invalid data errors
+function sanitizeForFirestore<T>(data: T): T {
+  try {
+    return JSON.parse(JSON.stringify(data));
+  } catch {
+    return data;
+  }
+}
+
 // ─── ISSUES ─────────────────────────────────────────────────────────────────
 
 /** Fetch all civic issues from Firestore */
@@ -49,7 +58,7 @@ export async function fetchIssues(): Promise<CivicIssue[]> {
       const batch = writeBatch(db);
       for (const issue of INITIAL_ISSUES) {
         const docRef = doc(db, 'civic_issues', issue.id || issue.complaint_number);
-        batch.set(docRef, issue);
+        batch.set(docRef, sanitizeForFirestore(issue));
       }
       await batch.commit().catch(err => console.warn('[Firestore] Seed note:', err));
       return INITIAL_ISSUES;
@@ -115,19 +124,19 @@ export async function createIssue(issue: Omit<CivicIssue, 'id'> | CivicIssue): P
     };
 
     // 1. Save issue to Firestore
-    await setDoc(docRef, newIssueRecord);
+    await setDoc(docRef, sanitizeForFirestore(newIssueRecord));
 
     // 2. Save initial status history record
     const histId = `hist-${Date.now()}-${issueId}`;
     const histRef = doc(db, 'issue_status_history', histId);
-    await setDoc(histRef, {
+    await setDoc(histRef, sanitizeForFirestore({
       id: histId,
       issue_id: issueId,
       new_status: 'pending',
       changed_by: issue.reporter_name || 'System / Citizen Reporter',
       department_note: `Ticket created. AI validation (${(((issue.ai_confidence ?? 0.95)) * 100).toFixed(1)}% confidence) confirmed infrastructure defect. 15-day SLA started.`,
       created_at: new Date().toISOString(),
-    }).catch(() => null);
+    })).catch(() => null);
 
     return newIssueRecord;
   } catch (error: any) {
