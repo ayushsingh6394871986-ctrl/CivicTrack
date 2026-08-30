@@ -93,12 +93,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if demo user saved locally
+    // Check if user session saved locally for instant hydration
     if (typeof window !== 'undefined') {
-      const savedDemo = localStorage.getItem('civic_demo_user');
-      if (savedDemo) {
+      const savedSession = localStorage.getItem('civic_user_session') || localStorage.getItem('civic_demo_user');
+      if (savedSession) {
         try {
-          setUser(JSON.parse(savedDemo));
+          const parsed = JSON.parse(savedSession);
+          setUser(parsed);
           setLoading(false);
         } catch (e) {}
       }
@@ -119,10 +120,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         setUser(appUser);
         setFirebaseUser(fbUser);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('civic_user_session', JSON.stringify(appUser));
+        }
       } else {
         if (typeof window !== 'undefined' && !localStorage.getItem('civic_demo_user')) {
           setUser(null);
           setFirebaseUser(null);
+          localStorage.removeItem('civic_user_session');
         }
       }
       setLoading(false);
@@ -262,6 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setFirebaseUser(null);
     if (typeof window !== 'undefined') {
       localStorage.removeItem('civic_demo_user');
+      localStorage.removeItem('civic_user_session');
     }
   }, []);
 

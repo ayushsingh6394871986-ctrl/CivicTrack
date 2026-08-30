@@ -24,7 +24,8 @@ import {
   ExternalLink,
   Trash2,
   ArrowLeft,
-  Award
+  Award,
+  Loader2
 } from 'lucide-react';
 import { getStoredIssues, upvoteIssue, saveStoredIssues, getUserFiledComplaints, getUserUpvotedIssues } from '@/lib/store';
 import { fetchIssues } from '@/lib/db';
@@ -41,7 +42,7 @@ export default function MyComplaintsPage() {
   const [selectedIssueForEvidence, setSelectedIssueForEvidence] = useState<CivicIssue | null>(null);
   const [loginOpen, setLoginOpen] = useState(false);
 
-  const { user, signInWithGoogle } = useAuth();
+  const { user, loading, signInWithGoogle } = useAuth();
 
   const loadIssues = async () => {
     // Merge both Firebase Firestore DB issues and local store issues so user sees everything immediately
@@ -85,7 +86,16 @@ export default function MyComplaintsPage() {
     };
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted || loading) {
+    return (
+      <div className="max-w-xl mx-auto py-24 px-4 text-center space-y-4 animate-in fade-in">
+        <Loader2 className="w-8 h-8 text-[#1A56A4] animate-spin mx-auto" />
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-bold">
+          Verifying municipal session & loading reports...
+        </p>
+      </div>
+    );
+  }
 
   // If user is NOT logged in, show auth prompt to view their reports
   if (!user) {
