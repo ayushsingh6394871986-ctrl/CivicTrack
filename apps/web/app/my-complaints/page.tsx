@@ -40,7 +40,15 @@ import EvidenceModal from '@/components/EvidenceModal';
 
 export default function MyComplaintsPage() {
   const [mounted, setMounted] = useState(false);
-  const [rawIssues, setRawIssues] = useState<CivicIssue[]>([]);
+  const [rawIssues, setRawIssues] = useState<CivicIssue[]>(() => {
+    if (typeof window !== 'undefined') {
+      const local = getStoredIssues();
+      const upvotedIds = new Set(getUserUpvotedIssues());
+      return local.map(i => ({ ...i, has_upvoted: upvotedIds.has(i.id) || !!i.has_upvoted }));
+    }
+    return [];
+  });
+  const [isLoadingIssues, setIsLoadingIssues] = useState(true);
   const [activeTab, setActiveTab] = useState<'active' | 'rejected'>('active');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -50,26 +58,31 @@ export default function MyComplaintsPage() {
   const { user, loading, signInWithGoogle } = useAuth();
 
   const loadIssues = async () => {
-    // Merge both Firebase Firestore DB issues and local store issues so user sees everything immediately
+    // 1. INSTANT ZERO-LATENCY LOAD: Load local/cached issues immediately
     const localIssues = getStoredIssues();
-    // Decorate all issues with has_upvoted from local upvoted IDs
     const upvotedIds = new Set(getUserUpvotedIssues());
     const decorate = (list: typeof localIssues) =>
       list.map(i => ({ ...i, has_upvoted: upvotedIds.has(i.id) || !!i.has_upvoted }));
 
+    const decoratedLocal = decorate(localIssues);
+    setRawIssues(decoratedLocal);
+    if (decoratedLocal.length > 0) {
+      setIsLoadingIssues(false);
+    }
+
+    // 2. BACKGROUND SYNC: Silently refresh from Firebase DB in background without blocking UI
     try {
       const dbIssues = await fetchIssues();
       if (dbIssues && dbIssues.length > 0) {
-        // Merge: prefer DB records, supplement with local records not yet in DB
         const dbNumbers = new Set(dbIssues.map(i => i.complaint_number));
         const localOnly = localIssues.filter(i => !dbNumbers.has(i.complaint_number));
         const merged = decorate([...dbIssues, ...localOnly]);
         saveStoredIssues(merged);
         setRawIssues(merged);
-        return;
       }
-    } catch {}
-    setRawIssues(decorate(localIssues));
+    } catch {} finally {
+      setIsLoadingIssues(false);
+    }
   };
 
   useEffect(() => {
@@ -332,7 +345,14 @@ export default function MyComplaintsPage() {
       </div>
 
       {/* Issue Cards */}
-      {filtered.length === 0 ? (
+      {isLoadingIssues && rawIssues.length === 0 ? (
+        <div className="p-12 text-center bg-white dark:bg-[#151C2C] rounded-3xl border border-slate-200 dark:border-slate-700 space-y-3 shadow-sm">
+          <Loader2 className="w-8 h-8 text-[#1A56A4] animate-spin mx-auto" />
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-bold">
+            Synchronizing your municipal grievances...
+          </p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="p-12 text-center bg-white dark:bg-[#151C2C] rounded-3xl border border-slate-200 dark:border-slate-700 space-y-4 shadow-sm">
           {activeTab === 'rejected' ? (
             <>
