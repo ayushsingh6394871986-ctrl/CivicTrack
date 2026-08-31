@@ -272,9 +272,9 @@ export default function TrackComplaintPage() {
                   <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> Overdue
                 </span>
               ) : issue.ai_analysis_status === 'analyzing' ? (
-                <span className="text-xs font-semibold text-purple-300 bg-purple-950 border border-purple-700 px-3 py-1 rounded-full flex items-center space-x-1">
+                <span className="text-xs font-semibold text-purple-300 bg-purple-950 border border-purple-700 px-3 py-1 rounded-full flex items-center space-x-1.5 shadow-sm">
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
-                  <span>AI Analyzing Photo...</span>
+                  <span>Calculating Defect Count & Severity...</span>
                 </span>
               ) : (
                 <span className="bg-cyan-950 text-cyan-300 border border-cyan-700 text-xs font-bold px-3 py-1 rounded-full capitalize">
@@ -287,7 +287,7 @@ export default function TrackComplaintPage() {
                 <span className="bg-emerald-950 text-emerald-300 border border-emerald-700 text-xs font-mono-data font-bold px-3 py-1 rounded-full flex items-center space-x-1.5 shadow-sm">
                   <Target className="w-3.5 h-3.5 text-emerald-400" />
                   <span>
-                    {issue.ai_count} Pothole{issue.ai_count > 1 ? 's' : ''} Detected (YOLO)
+                    {issue.ai_count} Pothole{issue.ai_count > 1 ? 's' : ''} Detected
                   </span>
                 </span>
               ) : null}
