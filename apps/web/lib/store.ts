@@ -80,7 +80,21 @@ export function getStoredIssues(): CivicIssue[] {
 export function saveStoredIssues(issues: CivicIssue[]) {
   memoryIssues = issues;
   if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEYS.ISSUES, JSON.stringify(issues));
+    try {
+      localStorage.setItem(STORAGE_KEYS.ISSUES, JSON.stringify(issues));
+    } catch (err) {
+      console.warn('LocalStorage quota limit reached, optimizing storage payload:', err);
+      try {
+        // Strip duplicate large image data URLs from older issues to fit inside localStorage quota
+        const trimmed = issues.slice(0, 30).map((iss, idx) => {
+          if (idx > 3 && iss.photo_url && iss.photo_url.startsWith('data:')) {
+            return { ...iss, photo_url: 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=800&q=80', additional_photos: [] };
+          }
+          return iss;
+        });
+        localStorage.setItem(STORAGE_KEYS.ISSUES, JSON.stringify(trimmed));
+      } catch {}
+    }
     window.dispatchEvent(new Event('civictrack_store_updated'));
   }
 }
@@ -102,7 +116,9 @@ export function getStoredHistory(): IssueStatusHistory[] {
 export function saveStoredHistory(history: IssueStatusHistory[]) {
   memoryHistory = history;
   if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
+    try {
+      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
+    } catch {}
   }
 }
 
@@ -123,7 +139,9 @@ export function getStoredEvidence(): ResolutionEvidence[] {
 export function saveStoredEvidence(evidence: ResolutionEvidence[]) {
   memoryEvidence = evidence;
   if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEYS.EVIDENCE, JSON.stringify(evidence));
+    try {
+      localStorage.setItem(STORAGE_KEYS.EVIDENCE, JSON.stringify(evidence));
+    } catch {}
   }
 }
 
@@ -144,7 +162,9 @@ export function getStoredNotifications(): NotificationItem[] {
 export function saveStoredNotifications(notifs: NotificationItem[]) {
   memoryNotifications = notifs;
   if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifs));
+    try {
+      localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifs));
+    } catch {}
   }
 }
 

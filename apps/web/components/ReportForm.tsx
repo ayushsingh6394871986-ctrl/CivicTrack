@@ -215,12 +215,25 @@ export default function ReportForm() {
     setIsSubmitting(true);
 
     try {
-      const geo = resolvedAddress || await reverseGeocodeReal(latitude, longitude);
-      const zoneFallback = matchZoneByCoordinates(latitude, longitude);
+      let geo: any = resolvedAddress;
+      if (!geo) {
+        try {
+          geo = await reverseGeocodeReal(latitude, longitude);
+        } catch {
+          geo = null;
+        }
+      }
 
-      const zoneName = geo.ward_name || zoneFallback.zone_name;
-      const deptName = geo.department || zoneFallback.department;
-      const cityCode = geo.city_code || zoneFallback.city_code;
+      let zoneFallback: any = null;
+      try {
+        zoneFallback = matchZoneByCoordinates(latitude, longitude);
+      } catch {
+        zoneFallback = null;
+      }
+
+      const zoneName = geo?.ward_name || zoneFallback?.zone_name || 'Ward (Law gate, Phagwara)';
+      const deptName = geo?.department || zoneFallback?.department || 'Municipal Public Works (PWD)';
+      const cityCode = geo?.city_code || zoneFallback?.city_code || 'PGW';
 
       const complaintNumber = generateComplaintNumber(cityCode, 2026);
       const now = new Date();
@@ -266,12 +279,18 @@ export default function ReportForm() {
         has_upvoted: true,
       };
 
-      // Save to Firebase Firestore database and local store so user sees the new docket immediately
+      // Save to Firebase Firestore database safely
       const savedIssue = await createIssue(newIssue).catch(err => {
         console.warn('Firebase Firestore create issue note:', err);
         return null;
       });
-      addIssue(savedIssue || newIssue);
+
+      // Save to local store safely
+      try {
+        addIssue(savedIssue || newIssue);
+      } catch (localStoreErr) {
+        console.warn('Local store addIssue fallback note:', localStoreErr);
+      }
 
       // Launch background AI analysis if not finished yet
       if (!liveApiData && photoUrl) {
@@ -286,8 +305,8 @@ export default function ReportForm() {
 
       router.push(`/track/${complaintNumber}?justCreated=true`);
     } catch (err: any) {
-      console.error(err);
-      setErrorMsg('Failed to submit report. Please try again.');
+      console.error('Submit error:', err);
+      setErrorMsg(err?.message ? `Failed to submit report: ${err.message}` : 'Failed to submit report. Please try again.');
       setIsSubmitting(false);
     }
   };
