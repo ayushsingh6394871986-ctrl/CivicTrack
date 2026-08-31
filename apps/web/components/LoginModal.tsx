@@ -96,7 +96,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               <div className="space-y-1">
                 <h3 className="text-xl font-black text-slate-900 dark:text-white">Signed In Successfully</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Welcome to CivicTracker Municipal Portal
+                  Welcome to CivicTrack Municipal Portal
                 </p>
               </div>
             </div>
@@ -107,12 +107,12 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/icon.png"
-                  alt="CivicTracker"
+                  alt="CivicTrack"
                   className="w-14 h-14 rounded-2xl shadow-lg mx-auto object-cover"
                 />
                 <div>
                   <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                    Sign in to CivicTracker
+                    Sign in to CivicTrack
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     Municipal Infrastructure Grievance & Accountability System

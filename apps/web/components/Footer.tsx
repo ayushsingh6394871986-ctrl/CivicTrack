@@ -20,10 +20,10 @@ export default function Footer() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/icon.png"
-                alt="CivicTracker"
+                alt="CivicTrack"
                 className="w-8 h-8 rounded-xl shadow-sm group-hover:scale-105 transition-transform object-cover"
               />
-              <span className="font-extrabold tracking-tight">CivicTracker</span>
+              <span className="font-extrabold tracking-tight">CivicTrack</span>
             </Link>
             <p className="text-[#9CA3AF] leading-relaxed text-xs">
               Turning civic complaints into traceable digital tickets with computer vision validation, geofenced alerts, and transparent resolution evidence.

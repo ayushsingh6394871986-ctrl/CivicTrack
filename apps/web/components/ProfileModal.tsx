@@ -204,7 +204,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 font-bold text-xs rounded-2xl border border-rose-200 dark:border-rose-800 transition-all active:scale-95 cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
-              <span>Sign Out of CivicTracker</span>
+              <span>Sign Out of CivicTrack</span>
             </button>
           </div>
 
