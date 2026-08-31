@@ -348,16 +348,16 @@ export default function ReportForm() {
                 setDismissedDuplicateId(nearbyDuplicate.issue.id);
                 setNearbyDuplicate(null);
               }}
-              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-sm transition-all cursor-pointer"
+              className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
             >
               File Separate New Ticket Anyway →
             </button>
             <button
               type="button"
               onClick={() => router.push(`/track/${nearbyDuplicate.issue.complaint_number}`)}
-              className="px-3.5 py-2.5 bg-[#E8E5DF] hover:bg-[#C9C4BA] text-slate-800 border border-[#D95F02]/40 font-semibold rounded-xl transition-all cursor-pointer"
+              className="px-3.5 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 font-bold text-xs rounded-xl transition-all active:scale-95 cursor-pointer"
             >
-              View Docket
+              View Existing Docket
             </button>
           </div>
         </div>
@@ -365,7 +365,7 @@ export default function ReportForm() {
 
       {/* 1. Category Picker */}
       <div className="space-y-3">
-        <label className="block text-xs font-bold text-[#4B5563] uppercase tracking-wider">
+        <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
           1. Select Defect Category
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -381,16 +381,16 @@ export default function ReportForm() {
                     setDescription(cat.defaultDesc);
                   }
                 }}
-                className={`p-3.5 rounded-2xl border text-left flex items-start space-x-2.5 transition-all text-xs ${
+                className={`p-3.5 rounded-2xl border text-left flex items-start space-x-2.5 transition-all text-xs active:scale-[0.98] cursor-pointer ${
                   isSelected
-                    ? 'border-[#D95F02] bg-amber-950/40 text-amber-300 font-bold ring-2 ring-amber-500/30 shadow-md'
-                    : 'border-[#C9C4BA] bg-[#E8E5DF] hover:bg-[#C9C4BA] text-[#4B5563]'
+                    ? 'border-blue-600 dark:border-blue-500 bg-blue-50 dark:bg-blue-950/60 text-blue-900 dark:text-blue-200 font-bold ring-2 ring-blue-500/30 shadow-md'
+                    : 'border-slate-200 dark:border-slate-700/80 bg-white dark:bg-[#151C2C] hover:bg-slate-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-300 shadow-xs'
                 }`}
               >
-                <span className="font-mono-data text-[10px] bg-[#F0EEE9] text-[#D95F02] border border-[#D95F02]/40 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
+                <span className="font-mono text-[10px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 px-1.5 py-0.5 rounded font-black uppercase shrink-0">
                   {cat.code}
                 </span>
-                <span className="font-semibold text-xs leading-snug">{cat.label}</span>
+                <span className="font-bold text-xs leading-snug">{cat.label}</span>
               </button>
             );
           })}
@@ -400,11 +400,11 @@ export default function ReportForm() {
       {/* 2. Live Camera & AI Detector */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <label className="block text-xs font-bold text-[#4B5563] uppercase tracking-wider">
-            2. Edge Computer Vision Scanner (YOLOv8)
+          <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+            2. Edge Computer Vision Scanner (AI Vision)
           </label>
-          <span className="text-[11px] font-semibold text-[#1A56A4] bg-[#EEF4FF] border border-[#1A56A4]/40 px-3 py-1 rounded-full">
-            Edge Model Ready
+          <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 px-3 py-1 rounded-full">
+            Vision Model Active
           </span>
         </div>
         <CameraCapture
@@ -414,17 +414,17 @@ export default function ReportForm() {
       </div>
 
       {/* 3. Real-Time GPS & Real-World Address Resolver */}
-      <div className="glass-card rounded-3xl p-5 sm:p-6 space-y-4 shadow-xl border border-[#C9C4BA]">
+      <div className="bg-white dark:bg-[#151C2C] rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm border border-slate-200 dark:border-slate-800">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-[#D95F02] flex items-center space-x-2 uppercase tracking-wider">
-            <LocateFixed className="w-4 h-4 text-[#D95F02]" />
+          <span className="text-xs font-black text-[#1D4ED8] dark:text-blue-400 flex items-center space-x-2 uppercase tracking-wider">
+            <LocateFixed className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <span>3. PostGIS Spatial Ward Jurisdiction</span>
           </span>
           <button
             type="button"
             onClick={fetchCurrentLocation}
             disabled={isLocating}
-            className="text-xs text-slate-950 bg-[#D95F02] hover:bg-[#D95F02] font-bold flex items-center space-x-1.5 px-3.5 py-2 rounded-xl shadow-xs transition-all"
+            className="text-xs text-white bg-blue-600 hover:bg-blue-700 font-bold flex items-center space-x-1.5 px-3.5 py-2 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
           >
             <Navigation className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
             <span>{isLocating ? 'Acquiring...' : 'Re-Scan GPS'}</span>
@@ -432,13 +432,13 @@ export default function ReportForm() {
         </div>
 
         {gpsStatus === 'granted' && (
-          <div className="p-3 bg-[#EDFBF0]/90 border border-[#176B3A]/80 rounded-xl text-xs text-[#176B3A] flex items-center justify-between">
+          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
             <span className="flex items-center space-x-2">
-              <CheckCircle className="w-4 h-4 text-[#176B3A] shrink-0" />
+              <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span className="font-bold">Live GPS Location Confirmed</span>
             </span>
             {accuracy && (
-              <span className="font-mono-data text-[11px] bg-[#176B3A] text-white px-2.5 py-0.5 rounded-full font-bold">
+              <span className="font-mono text-[11px] bg-emerald-600 text-white px-2.5 py-0.5 rounded-full font-bold">
                 ±{accuracy}m Accuracy
               </span>
             )}
@@ -446,18 +446,18 @@ export default function ReportForm() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-          <div className="bg-[#F0EEE9]/90 p-4 rounded-2xl border border-[#C9C4BA] space-y-1">
-            <span className="text-[10px] uppercase font-bold text-[#6B6860] block tracking-wider">Jurisdictional Ward</span>
-            <p className="font-extrabold text-[#1E2328] text-sm">{wardDisplay}</p>
-            <p className="text-xs text-[#1A56A4] font-semibold">{deptDisplay}</p>
+          <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Jurisdictional Ward</span>
+            <p className="font-extrabold text-slate-900 dark:text-white text-sm">{wardDisplay}</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">{deptDisplay}</p>
           </div>
 
-          <div className="bg-[#F0EEE9]/90 p-4 rounded-2xl border border-[#C9C4BA] flex flex-col justify-center space-y-1">
-            <span className="text-[10px] uppercase font-bold text-[#6B6860] block tracking-wider">Geospatial Coordinates</span>
-            <p className="font-mono-data text-[#D95F02] font-bold text-xs">
+          <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex flex-col justify-center space-y-1">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Geospatial Coordinates</span>
+            <p className="font-mono text-blue-600 dark:text-blue-400 font-bold text-xs">
               Lat: {latitude.toFixed(6)}, Lng: {longitude.toFixed(6)}
             </p>
-            <span className="text-xs text-[#6B6860] truncate">
+            <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
               {resolvedAddress?.display_name ? resolvedAddress.display_name.slice(0, 50) + '...' : 'Geocoding matched'}
             </span>
           </div>
@@ -467,7 +467,7 @@ export default function ReportForm() {
       {/* 4. Issue Title & Landmark */}
       <div className="space-y-4">
         <div className="space-y-1.5">
-          <label className="block text-xs font-bold text-[#4B5563] uppercase tracking-wider">
+          <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
             4. Docket Summary / Title
           </label>
           <input
@@ -475,23 +475,23 @@ export default function ReportForm() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Hazardous asphalt road pothole near GT Road junction"
-            className="w-full px-4 py-3 text-xs sm:text-sm bg-white border border-[#C9C4BA] rounded-xl outline-none focus:border-[#D95F02] font-semibold text-[#1E2328] placeholder-slate-400 shadow-xs"
+            className="w-full px-4 py-3 text-xs sm:text-sm bg-white dark:bg-[#151C2C] border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-blue-500 font-semibold text-slate-900 dark:text-white placeholder-slate-400 shadow-xs"
             required
           />
         </div>
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="block text-xs font-bold text-[#4B5563] uppercase tracking-wider">
+            <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
               Field Evidence Description
             </label>
             <button
               type="button"
               onClick={startVoiceDictation}
-              className={`text-xs font-semibold flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border transition-all ${
+              className={`text-xs font-bold flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border transition-all active:scale-95 cursor-pointer ${
                 isListening
                   ? 'bg-rose-600 text-white border-rose-700 animate-pulse'
-                  : 'bg-[#E8E5DF] hover:bg-[#C9C4BA] text-[#4B5563] border-[#C9C4BA]'
+                  : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
               }`}
             >
               {isListening ? (
@@ -501,7 +501,7 @@ export default function ReportForm() {
                 </>
               ) : (
                 <>
-                  <Mic className="w-3.5 h-3.5 text-[#D95F02]" />
+                  <Mic className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                   <span>Voice Dictate</span>
                 </>
               )}
@@ -512,7 +512,7 @@ export default function ReportForm() {
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
             placeholder="Specify physical landmarks, lane direction, or hazard risks..."
-            className="w-full px-4 py-3 text-xs sm:text-sm bg-white border border-[#C9C4BA] rounded-xl outline-none focus:border-[#D95F02] font-medium text-[#1E2328] placeholder-slate-400 leading-relaxed shadow-xs"
+            className="w-full px-4 py-3 text-xs sm:text-sm bg-white dark:bg-[#151C2C] border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-blue-500 font-medium text-slate-900 dark:text-white placeholder-slate-400 leading-relaxed shadow-xs"
           />
         </div>
       </div>

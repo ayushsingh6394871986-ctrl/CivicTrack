@@ -401,7 +401,7 @@ export default function TrackComplaintPage() {
           <div className="flex items-center space-x-3">
             <button
               onClick={handleUpvoteClick}
-              className={`px-4 py-2 font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center space-x-1.5 active:scale-95 cursor-pointer ${
+              className={`px-4 py-2.5 font-black text-xs rounded-2xl shadow-sm transition-all flex items-center space-x-2 active:scale-95 cursor-pointer ${
                 issue.has_upvoted
                   ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-300 shadow-md'
                   : 'bg-slate-900 hover:bg-slate-800 text-amber-400 border border-amber-400/40'
@@ -414,7 +414,7 @@ export default function TrackComplaintPage() {
             {!isResolved && (
               <button
                 onClick={() => setIsEvidenceModalOpen(true)}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 font-semibold text-xs rounded-xl transition-colors flex items-center space-x-1.5"
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold text-xs rounded-2xl shadow-xs transition-all flex items-center space-x-2 active:scale-95 cursor-pointer"
               >
                 <Wrench className="w-4 h-4 text-amber-400" />
                 <span>Upload Resolution Evidence</span>
@@ -425,7 +425,7 @@ export default function TrackComplaintPage() {
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setIsVerifyModalOpen(true)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5"
+              className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs rounded-2xl shadow-md transition-all flex items-center space-x-2 active:scale-95 cursor-pointer"
             >
               <CheckCircle className="w-4 h-4" />
               <span>Citizen Verification Guardrail</span>

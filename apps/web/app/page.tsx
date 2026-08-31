@@ -79,45 +79,46 @@ export default function HomePage() {
             Municipal Infrastructure<br />Defect Docket & Audit System
           </h1>
 
-          <p className="text-sm sm:text-base text-[#6B6860] leading-relaxed max-w-3xl font-medium">
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-3xl font-medium">
             AI computer vision validation, PostGIS ward spatial routing, 15-day SLA compliance countdowns, 500-upvote emergency compression, and citizen-verified photo closure.
           </p>
 
           {/* Primary Actions */}
-          <div className="flex flex-wrap items-center gap-4 pt-2">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <Link
               href="/report"
-              className="flex items-center space-x-3 px-8 py-4 rounded-2xl bg-[#B91C1C] hover:bg-[#991B1B] text-white font-extrabold text-sm tracking-wide shadow-xl animate-pulse hover:animate-none transition-all active:scale-95"
+              className="flex items-center space-x-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-black text-sm tracking-wide shadow-xl shadow-red-500/20 transition-all active:scale-95 cursor-pointer"
             >
               <AlertTriangle className="w-5 h-5" />
               <span className="uppercase tracking-widest">Report Civic Issue</span>
-              <span className="hidden sm:inline-block text-[10px] font-mono-data bg-white/20 px-2 py-0.5 rounded-md">
+              <span className="hidden sm:inline-block text-[10px] font-mono bg-white/20 px-2 py-0.5 rounded-md font-bold">
                 Live Scanner
               </span>
             </Link>
             <Link
               href="/map"
-              className="px-6 py-4 rounded-2xl bg-[#EEF4FF] hover:bg-[#DBEAFE] text-[#1A56A4] border border-[#1A56A4]/30 font-bold text-xs sm:text-sm transition-all flex items-center space-x-2"
+              className="px-6 py-4 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-slate-700 font-bold text-xs sm:text-sm shadow-xs transition-all flex items-center space-x-2 active:scale-95 cursor-pointer"
             >
               <MapPin className="w-4 h-4" />
               <span>GIS Map Layer</span>
             </Link>
           </div>
 
-
-
           {/* Ticket Lookup */}
           <form onSubmit={handleSearchSubmit} className="pt-2 max-w-md">
             <div className="relative flex items-center">
-              <Search className="w-4 h-4 text-[#6B6860] absolute left-3.5" />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5" />
               <input
                 type="text"
                 value={searchComplaint}
                 onChange={(e) => setSearchComplaint(e.target.value)}
                 placeholder="Track ticket docket ID (e.g. CTR-2026-...)"
-                className="w-full pl-10 pr-24 py-2.5 bg-white border-2 border-[#C9C4BA] rounded-xl text-xs font-mono-data text-[#1E2328] placeholder-[#9CA3AF] focus:outline-none focus:border-[#1A56A4]"
+                className="w-full pl-10 pr-24 py-3 bg-white dark:bg-[#151C2C] border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-mono text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 shadow-xs"
               />
-              <button type="submit" className="absolute right-1.5 px-3 py-1.5 bg-[#D95F02] hover:bg-[#C04F00] text-white text-xs font-bold rounded-lg transition-colors">
+              <button
+                type="submit"
+                className="absolute right-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
+              >
                 Lookup
               </button>
             </div>

@@ -331,7 +331,7 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
               <button
                 type="button"
                 onClick={stopCamera}
-                className="bg-rose-700 hover:bg-rose-600 px-3 py-1.5 rounded-none text-[#1E2328] text-xs font-mono font-bold border border-rose-400 shadow-sm transition-colors flex items-center space-x-1.5 uppercase"
+                className="bg-rose-600 hover:bg-rose-700 px-3.5 py-1.5 rounded-xl text-white text-xs font-mono font-bold shadow-md transition-all flex items-center space-x-1.5 uppercase active:scale-95 cursor-pointer"
                 title="Turn Off Camera"
               >
                 <CameraOff className="w-3.5 h-3.5" />
@@ -340,7 +340,7 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
               <button
                 type="button"
                 onClick={toggleCameraFacing}
-                className="bg-[#E8E5DF] hover:bg-[#C9C4BA] p-1.5 text-[#2D3340] border border-[#C9C4BA] shadow-sm transition-colors"
+                className="bg-white/90 hover:bg-white dark:bg-slate-900/90 dark:hover:bg-slate-900 p-2 text-slate-800 dark:text-slate-200 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 transition-all active:scale-95 cursor-pointer"
                 title="Switch Camera"
               >
                 <SwitchCamera className="w-4 h-4" />
@@ -364,9 +364,9 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
               <button
                 type="button"
                 onClick={retakePhoto}
-                className="px-3 py-1.5 bg-[#E8E5DF] hover:bg-[#C9C4BA] backdrop-blur text-[#1E2328] text-xs font-medium rounded-lg border border-[#C9C4BA] shadow transition-colors flex items-center space-x-1.5"
+                className="px-3.5 py-2 bg-white/95 hover:bg-white dark:bg-slate-900/90 dark:hover:bg-slate-900 backdrop-blur-md text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg transition-all flex items-center space-x-1.5 active:scale-95 cursor-pointer"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
+                <RefreshCw className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span>Retake Photo</span>
               </button>
             </div>
@@ -376,26 +376,26 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
         {/* Initial Idle State */}
         {!isCameraActive && !capturedPhoto && (
           <div className="text-center p-6 space-y-3">
-            <div className="w-14 h-14 rounded-full bg-[#C9C4BA] border border-[#C9C4BA] flex items-center justify-center mx-auto text-[#176B3A]">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400 shadow-sm">
               <Camera className="w-7 h-7" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-[#2D3340]">Capture Live Photo Evidence</p>
-              <p className="text-xs text-[#6B6860] mt-1">
-                Connected directly to live detection backend (<code className="text-[#176B3A]">civicpulse-ai-95na.onrender.com</code>)
+              <p className="text-sm font-bold text-slate-900 dark:text-white">Capture Live Photo Evidence</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Edge AI & Multimodal Vision Analysis automatically inspects defect type and severity
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => startCamera(facingMode)}
-                className="px-4 py-2.5 bg-emerald-600 hover:bg-[#176B3A] text-[#1E2328] text-xs font-bold rounded-xl shadow-lg transition-all flex items-center space-x-2"
+                className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md shadow-blue-500/20 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer"
               >
                 <Camera className="w-4 h-4" />
                 <span>Open Webcam / Camera</span>
               </button>
-              <label className="px-4 py-2.5 bg-[#C9C4BA] hover:bg-slate-700 text-[#2D3340] text-xs font-semibold rounded-xl border border-slate-600 shadow cursor-pointer transition-all flex items-center space-x-2">
-                <Upload className="w-4 h-4" />
+              <label className="px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs cursor-pointer transition-all flex items-center space-x-2 active:scale-95">
+                <Upload className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span>Upload Photo File</span>
                 <input
                   type="file"
