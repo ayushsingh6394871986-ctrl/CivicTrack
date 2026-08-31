@@ -21,6 +21,7 @@ export interface DetectionResult {
   is_civic_issue: boolean;
   detected_class: string;
   confidence: number;
+  count?: number;
   label: string;
   category: IssueCategory;
   message: string;
@@ -117,11 +118,11 @@ export function computeDynamicSeverity(
 
 /**
  * Main AI Verification Engine:
- * 1. Potholes: Queries YOLO computer vision model on Render. If YOLO detects no pothole or is asleep,
- *    verifies with Google Gemini Vision.
+ * 1. Potholes: Queries YOLO computer vision model on Render. If YOLO detects potholes, captures bounding boxes and count.
+ *    If YOLO is unavailable or returns 0, verifies with Google Gemini Multimodal Vision API.
  * 2. All other categories: Directly inspected via Google Gemini Multimodal Vision API.
  * 3. Strict Non-Defect Rejection: Any non-defect (paper, selfie, room, food, clean road) is returned
- *    with detected=false, severity=0 so no fake tickets can be submitted.
+ *    with detected=false, count=0, severity=0.
  */
 export async function analyzeImageWithLiveApi(
   imageInput: File | Blob | string,
@@ -167,11 +168,13 @@ export async function analyzeImageWithLiveApi(
       if (response && response.ok) {
         const data: AnalyzeApiResponse = await response.json();
         if (data && data.detected && data.detections && data.detections.length > 0) {
+          data.count = data.count || data.detections.length;
           data.detections = data.detections.map((det, idx) => ({
             ...det,
             severity: computeDynamicSeverity('pothole', det.box, det.confidence, 'pothole_' + Date.now(), idx),
           }));
           data.severity = Math.max(...data.detections.map((d) => d.severity));
+          data.description = data.description || `YOLO Computer Vision detected ${data.count} pothole${data.count > 1 ? 's' : ''} with high confidence.`;
           return data;
         }
       }
@@ -196,24 +199,24 @@ export async function analyzeImageWithLiveApi(
     if (res.ok) {
       const gemini = await res.json();
       const isDetected = Boolean(gemini.detected && gemini.is_civic_issue && gemini.severity > 0);
-
       const recognizedCategory = (gemini.issue_type && gemini.issue_type !== 'invalid_non_defect') ? gemini.issue_type : issueType;
+      const detectedCount = isDetected ? (typeof gemini.count === 'number' && gemini.count > 0 ? gemini.count : 1) : 0;
 
       return {
         detected: isDetected,
-        count: isDetected ? 1 : 0,
+        count: detectedCount,
         severity: isDetected ? (gemini.severity || 65) : 0,
         issue_type: isDetected ? recognizedCategory : 'invalid_non_defect',
-        description: gemini.description || gemini.rejection_reason || 'Image inspected by Gemini AI.',
-        rejection_reason: gemini.rejection_reason || (!isDetected ? 'Photo rejected: Human face / non-infrastructure subject detected.' : undefined),
+        description: gemini.description || (isDetected ? `Verified ${recognizedCategory.replace(/_/g, ' ')} defect identified.` : 'No municipal infrastructure defect detected.'),
+        rejection_reason: gemini.rejection_reason || (!isDetected ? 'Photo rejected: Non-civic subject or undamaged surface detected.' : undefined),
         detections: isDetected
-          ? [
-              {
-                confidence: gemini.confidence || 0.94,
-                box: [100, 50, 300, 200],
-                severity: gemini.severity || 65,
-              },
-            ]
+          ? (Array.isArray(gemini.detections) && gemini.detections.length > 0
+              ? gemini.detections
+              : Array.from({ length: detectedCount }).map((_, i) => ({
+                  confidence: gemini.confidence || 0.94,
+                  box: [100 + i * 20, 50 + i * 20, 300 + i * 20, 200 + i * 20] as [number, number, number, number],
+                  severity: gemini.severity || 65,
+                })))
           : [],
       };
     }
@@ -221,14 +224,14 @@ export async function analyzeImageWithLiveApi(
     console.warn('AI Gemini Vision route note:', err);
   }
 
-  // ── 3. STRICT NON-DEFECT REJECTION: Never assign fake severity ─────────────
+  // ── 3. STRICT NON-DEFECT REJECTION: Fallback when image cannot be processed ──
   return {
     detected: false,
     count: 0,
     severity: 0,
     issue_type: issueType,
     description: 'Image verification required. Please upload a clear photo of the actual infrastructure defect.',
-    rejection_reason: 'No civic defect identified in uploaded image.',
+    rejection_reason: 'Photo rejected: No valid municipal defect identified in uploaded image.',
     detections: [],
   };
 }
@@ -250,12 +253,15 @@ export async function detectCivicIssue(
         ? Math.max(...apiResult.detections.map((d) => d.confidence))
         : apiResult.detected ? 0.90 : 0.0;
 
+    const defectCount = apiResult.count || (apiResult.detected ? 1 : 0);
+
     return {
       is_civic_issue: apiResult.detected && apiResult.severity > 0,
       detected_class: apiResult.issue_type.toUpperCase(),
       confidence: highestConfidence,
+      count: defectCount,
       label: apiResult.detected && apiResult.severity > 0
-        ? `${(highestConfidence * 100).toFixed(1)}% AI Confidence`
+        ? `${(highestConfidence * 100).toFixed(1)}% AI Confidence (${defectCount} Detected)`
         : 'Inspection Rejected (Non-Defect)',
       category: (categoryHint as IssueCategory) || 'pothole',
       message:

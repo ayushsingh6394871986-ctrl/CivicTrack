@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapPin, AlertCircle, CheckCircle, ArrowRight, ShieldCheck, Sparkles, Navigation, LocateFixed, Mic, MicOff } from 'lucide-react';
+import { MapPin, AlertCircle, CheckCircle, ArrowRight, ShieldCheck, Sparkles, Navigation, LocateFixed, Mic, MicOff, Camera } from 'lucide-react';
 import CameraCapture from './CameraCapture';
 import { DetectionResult, AnalyzeApiResponse, analyzeImageWithLiveApi } from '../lib/aiDetector';
 import { matchZoneByCoordinates, reverseGeocodeReal, RealGeoAddress } from '../lib/zoneMatcher';
@@ -212,23 +212,7 @@ export default function ReportForm() {
       return;
     }
 
-    // 🚫 AI CANCELLED / FALSE REPORT GUARD
-    if (
-      liveApiData?.detected === false ||
-      (liveApiData?.severity !== undefined && liveApiData.severity === 0) ||
-      aiResult?.is_civic_issue === false ||
-      aiResult?.detected_class === 'Clean Road Surface (No Defect)'
-    ) {
-      setErrorMsg(
-        liveApiData?.description ||
-        liveApiData?.rejection_reason ||
-        '🚫 REPORT REJECTED BY AI: The vision model evaluated this photo and found NO valid civic defect. Please upload a clear photo of the actual infrastructure problem.'
-      );
-      return;
-    }
-
     setIsSubmitting(true);
-
 
     try {
       const geo = resolvedAddress || await reverseGeocodeReal(latitude, longitude);
@@ -248,6 +232,8 @@ export default function ReportForm() {
       const userReporterEmail = user?.email || undefined;
       const userReporterName = user?.displayName || user?.email?.split('@')[0] || 'Verified Citizen';
 
+      const isAlreadyRejected = liveApiData && (!liveApiData.detected || liveApiData.severity === 0);
+
       const newIssue: CivicIssue = {
         id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `issue-${Date.now()}`,
         complaint_number: complaintNumber,
@@ -258,20 +244,21 @@ export default function ReportForm() {
         zone_name: zoneName,
         department: deptName,
         category,
-        title: title || `${category.toUpperCase()} at ${zoneName}`,
+        title: title || `${category.toUpperCase().replace(/_/g, ' ')} at ${zoneName}`,
         description: description || `Civic issue reported via live camera at ${zoneName}.`,
         photo_url: photoFinal,
         additional_photos: photoFinal ? [photoFinal] : [],
         ai_confidence: liveApiData?.detections?.[0]?.confidence ?? aiResult?.confidence ?? 0.95,
-        ai_detected_class: liveApiData?.issue_type ? liveApiData.issue_type.toUpperCase() : (aiResult?.detected_class || 'Pothole'),
-        ai_analysis_status: liveApiData ? 'completed' : 'analyzing',
+        ai_detected_class: liveApiData?.issue_type ? liveApiData.issue_type.toUpperCase() : (aiResult?.detected_class || category.toUpperCase()),
+        ai_analysis_status: liveApiData ? (isAlreadyRejected ? 'failed' : 'completed') : 'analyzing',
         ai_severity: liveApiData?.severity,
-        ai_count: liveApiData?.count,
+        ai_count: liveApiData?.count || (liveApiData?.detections ? liveApiData.detections.length : 1),
         ai_detections: liveApiData?.detections,
         ai_description: liveApiData?.description,
+        rejection_reason: isAlreadyRejected ? (liveApiData?.rejection_reason || liveApiData?.description) : undefined,
         latitude,
         longitude,
-        status: 'pending',
+        status: isAlreadyRejected ? 'rejected' : 'pending',
         upvote_count: 1,
         reported_at: now.toISOString(),
         deadline_at: deadline.toISOString(),
@@ -279,7 +266,7 @@ export default function ReportForm() {
         has_upvoted: true,
       };
 
-      // Save to Firebase Firestore database and local store so both live phone scans and local client see the new docket immediately
+      // Save to Firebase Firestore database and local store so user sees the new docket immediately
       const savedIssue = await createIssue(newIssue).catch(err => {
         console.warn('Firebase Firestore create issue note:', err);
         return null;
@@ -288,7 +275,7 @@ export default function ReportForm() {
 
       // Launch background AI analysis if not finished yet
       if (!liveApiData && photoUrl) {
-        analyzeImageWithLiveApi(photoUrl, category)
+        analyzeImageWithLiveApi(photoUrl, category, description)
           .then((apiData) => {
             updateIssueAiResults(newIssue.id, apiData);
           })
@@ -516,21 +503,63 @@ export default function ReportForm() {
         </div>
       )}
 
-      {/* Submit Button */}
-      <button
-        type="submit"
-        disabled={isSubmitting || !photoUrl}
-        className="w-full py-4.5 px-6 bg-[#D95F02] hover:bg-[#D95F02] disabled:bg-[#C9C4BA] text-slate-950 font-extrabold text-sm sm:text-base rounded-2xl shadow-xl shadow-amber-500/20 active:scale-98 transition-all flex items-center justify-center space-x-2.5"
-      >
-        {isSubmitting ? (
-          <span>Generating Official Municipal Docket...</span>
-        ) : (
-          <>
-            <span>Register Official Municipal Grievance Docket</span>
-            <ArrowRight className="w-5 h-5" />
-          </>
-        )}
-      </button>
+      {/* Attractive & Bigger Submit Button */}
+      <div className="pt-2">
+        <button
+          type="submit"
+          disabled={isSubmitting || !photoUrl}
+          className={`group relative w-full py-5 sm:py-6 px-8 rounded-2xl sm:rounded-3xl font-black text-base sm:text-lg transition-all duration-300 shadow-2xl flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 cursor-pointer overflow-hidden ${
+            !photoUrl
+              ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 border border-slate-300 dark:border-slate-700 cursor-not-allowed shadow-none'
+              : isSubmitting
+              ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white animate-pulse shadow-orange-500/30'
+              : 'bg-gradient-to-r from-[#D95F02] via-[#ea580c] to-[#c2410c] hover:from-[#c2410c] hover:via-[#ea580c] hover:to-[#D95F02] text-white shadow-orange-600/30 hover:shadow-orange-600/50 hover:scale-[1.01] active:scale-[0.99] ring-2 ring-orange-400/50'
+          }`}
+        >
+          {/* Subtle light streak / sheen layer */}
+          <div className="absolute inset-0 w-1/2 h-full bg-white/10 skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-out pointer-events-none" />
+
+          {isSubmitting ? (
+            <div className="flex items-center space-x-3">
+              <Sparkles className="w-6 h-6 animate-spin text-amber-200" />
+              <div className="text-center sm:text-left">
+                <span className="block font-black text-base sm:text-lg tracking-tight">Generating Official Grievance Docket...</span>
+                <span className="block text-xs font-normal text-amber-100/90">Starting PostGIS Jurisdiction Routing & Background Verification</span>
+              </div>
+            </div>
+          ) : !photoUrl ? (
+            <div className="flex items-center space-x-2.5 text-slate-400">
+              <Camera className="w-5 h-5" />
+              <span className="text-sm sm:text-base font-bold">Attach or Capture Defect Photo to Submit</span>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <ShieldCheck className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-center sm:text-left">
+                  <div className="flex items-center space-x-2 justify-center sm:justify-start">
+                    <span className="font-black tracking-tight text-white drop-shadow-sm text-base sm:text-lg">
+                      Register Official Municipal Grievance
+                    </span>
+                    <span className="hidden sm:inline-block bg-white/20 text-white font-mono text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md">
+                      Instant SLA
+                    </span>
+                  </div>
+                  <span className="block text-[11px] sm:text-xs font-semibold text-amber-100/90 tracking-normal mt-0.5">
+                    Direct Ward Jurisdiction Dispatch • Background AI Verification
+                  </span>
+                </div>
+              </div>
+
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0 group-hover:translate-x-1.5 transition-transform duration-300">
+                <ArrowRight className="w-5 h-5 text-white" />
+              </div>
+            </>
+          )}
+        </button>
+      </div>
     </form>
   );
 }

@@ -17,6 +17,7 @@ import {
   Camera,
   Navigation,
   ShieldAlert,
+  ShieldCheck,
   Wrench,
   Sparkles,
   LogIn,
@@ -25,7 +26,10 @@ import {
   Trash2,
   ArrowLeft,
   Award,
-  Loader2
+  Loader2,
+  XCircle,
+  ShieldX,
+  Target
 } from 'lucide-react';
 import { getStoredIssues, upvoteIssue, saveStoredIssues, getUserFiledComplaints, getUserUpvotedIssues } from '@/lib/store';
 import { fetchIssues } from '@/lib/db';
@@ -37,6 +41,7 @@ import EvidenceModal from '@/components/EvidenceModal';
 export default function MyComplaintsPage() {
   const [mounted, setMounted] = useState(false);
   const [rawIssues, setRawIssues] = useState<CivicIssue[]>([]);
+  const [activeTab, setActiveTab] = useState<'active' | 'rejected'>('active');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedIssueForEvidence, setSelectedIssueForEvidence] = useState<CivicIssue | null>(null);
@@ -151,7 +156,12 @@ export default function MyComplaintsPage() {
     return false;
   });
 
-  const filtered = myIssues.filter((issue) => {
+  const activeIssues = myIssues.filter((i) => i.status !== 'rejected');
+  const rejectedIssues = myIssues.filter((i) => i.status === 'rejected');
+
+  const currentTabIssues = activeTab === 'active' ? activeIssues : rejectedIssues;
+
+  const filtered = currentTabIssues.filter((issue) => {
     if (statusFilter !== 'all' && issue.status !== statusFilter) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -173,6 +183,8 @@ export default function MyComplaintsPage() {
         return 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700';
       case 'verified':
         return 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-700';
+      case 'rejected':
+        return 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-700';
       default:
         return 'bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-700';
     }
@@ -236,7 +248,7 @@ export default function MyComplaintsPage() {
             className="inline-flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-red-50 dark:bg-slate-800 dark:hover:bg-red-950/40 text-slate-600 hover:text-red-600 dark:text-slate-300 dark:hover:text-red-400 font-bold text-xs border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Clear Old Test Cards</span>
+            <span>Clear Test Cache</span>
           </button>
 
           <Link
@@ -247,6 +259,41 @@ export default function MyComplaintsPage() {
             <span>File New Grievance</span>
           </Link>
         </div>
+      </div>
+
+      {/* Tabs: Active Grievances vs Rejected Reports */}
+      <div className="flex items-center space-x-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveTab('active')}
+          className={`flex items-center space-x-2 px-4 py-2.5 rounded-2xl font-bold text-xs transition-all cursor-pointer ${
+            activeTab === 'active'
+              ? 'bg-[#1A56A4] text-white shadow-md'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+          }`}
+        >
+          <CheckCircle className="w-4 h-4" />
+          <span>Active Grievances</span>
+          <span className="font-mono-data bg-white/20 text-white px-2 py-0.5 rounded-full text-[10px]">
+            {activeIssues.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('rejected')}
+          className={`flex items-center space-x-2 px-4 py-2.5 rounded-2xl font-bold text-xs transition-all cursor-pointer ${
+            activeTab === 'rejected'
+              ? 'bg-rose-600 text-white shadow-md'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+          }`}
+        >
+          <ShieldX className="w-4 h-4" />
+          <span>Rejected Reports (AI)</span>
+          <span className="font-mono-data bg-white/20 text-white px-2 py-0.5 rounded-full text-[10px]">
+            {rejectedIssues.length}
+          </span>
+        </button>
       </div>
 
       {/* Filters & Search */}
@@ -269,11 +316,17 @@ export default function MyComplaintsPage() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="w-full py-2.5 px-3 bg-white dark:bg-[#151C2C] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white font-bold outline-none cursor-pointer"
           >
-            <option value="all">All Statuses ({myIssues.length})</option>
-            <option value="pending">Pending</option>
-            <option value="in_progress">In Progress</option>
-            <option value="verified">Field Verified</option>
-            <option value="resolved">Resolved</option>
+            <option value="all">All ({currentTabIssues.length})</option>
+            {activeTab === 'active' ? (
+              <>
+                <option value="pending">Pending Verification</option>
+                <option value="in_progress">In Progress</option>
+                <option value="verified">Field Verified</option>
+                <option value="resolved">Resolved</option>
+              </>
+            ) : (
+              <option value="rejected">AI Rejected</option>
+            )}
           </select>
         </div>
       </div>
@@ -281,22 +334,38 @@ export default function MyComplaintsPage() {
       {/* Issue Cards */}
       {filtered.length === 0 ? (
         <div className="p-12 text-center bg-white dark:bg-[#151C2C] rounded-3xl border border-slate-200 dark:border-slate-700 space-y-4 shadow-sm">
-          <FileText className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
-          <div className="space-y-1">
-            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
-              No Registered Grievances Found
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-              You haven't filed any complaints yet. Capture photo evidence of any local defect to create an official municipal docket.
-            </p>
-          </div>
-          <Link
-            href="/report"
-            className="inline-flex items-center space-x-2 px-5 py-2.5 bg-[#B91C1C] hover:bg-[#991B1B] text-white font-bold text-xs rounded-xl shadow-md transition-all"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>Report an Issue Now</span>
-          </Link>
+          {activeTab === 'rejected' ? (
+            <>
+              <ShieldCheck className="w-12 h-12 text-emerald-500 mx-auto" />
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+                  No Rejected Reports
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                  All your uploaded photo grievances have passed AI infrastructure verification with valid defect classification.
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <FileText className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+                  No Registered Grievances Found
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                  You haven't filed any active complaints yet. Capture photo evidence of any local defect to create an official municipal docket.
+                </p>
+              </div>
+              <Link
+                href="/report"
+                className="inline-flex items-center space-x-2 px-5 py-2.5 bg-[#B91C1C] hover:bg-[#991B1B] text-white font-bold text-xs rounded-xl shadow-md transition-all"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Report an Issue Now</span>
+              </Link>
+            </>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -304,64 +373,131 @@ export default function MyComplaintsPage() {
             const deadline = new Date(issue.deadline_at);
             const diffDays = Math.ceil((deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
             const isResolved = issue.status === 'resolved';
+            const isRejected = issue.status === 'rejected';
+            const isAnalyzing = issue.ai_analysis_status === 'analyzing';
+            const potholeCount = issue.ai_count || (issue.category === 'pothole' ? 1 : undefined);
 
             return (
               <div
                 key={issue.id}
-                className="bg-white dark:bg-[#151C2C] rounded-3xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
+                className={`rounded-3xl border p-5 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between ${
+                  isRejected
+                    ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-300 dark:border-rose-800'
+                    : 'bg-white dark:bg-[#151C2C] border-slate-200 dark:border-slate-700'
+                }`}
               >
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
                     <span className="font-mono text-xs font-black text-[#1A56A4] dark:text-blue-400">
                       {issue.complaint_number}
                     </span>
-                    <span
-                      className={`text-[10px] uppercase font-extrabold px-2.5 py-0.5 rounded-md border ${getStatusBadge(
-                        issue.status
-                      )}`}
-                    >
-                      {issue.status.replace('_', ' ')}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      {isAnalyzing ? (
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md border bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border-purple-300 flex items-center space-x-1">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <span>AI Analyzing...</span>
+                        </span>
+                      ) : (
+                        <span
+                          className={`text-[10px] uppercase font-extrabold px-2.5 py-0.5 rounded-md border ${getStatusBadge(
+                            issue.status
+                          )}`}
+                        >
+                          {issue.status.replace('_', ' ')}
+                        </span>
+                      )}
+
+                      {/* Defect count / Pothole count badge */}
+                      {potholeCount && !isRejected && (
+                        <span className="text-[10px] font-mono font-extrabold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 flex items-center space-x-1">
+                          <Target className="w-3 h-3 text-emerald-600" />
+                          <span>
+                            {issue.category === 'pothole'
+                              ? `${potholeCount} Pothole${potholeCount > 1 ? 's' : ''}`
+                              : `Count: ${potholeCount}`}
+                          </span>
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex space-x-3">
-                    <div className="w-20 h-20 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700">
+                    <div className="w-20 h-20 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 relative">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={issue.photo_url}
                         alt={issue.title}
                         className="w-full h-full object-cover"
                       />
+                      {isRejected && (
+                        <div className="absolute inset-0 bg-red-900/60 flex items-center justify-center text-white">
+                          <XCircle className="w-6 h-6 text-red-300" />
+                        </div>
+                      )}
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-1 flex-1 min-w-0">
                       <h4 className="font-bold text-slate-900 dark:text-white text-sm line-clamp-1">
                         {issue.title}
                       </h4>
                       <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{issue.zone_name || 'Local Ward'}</span>
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="truncate">{issue.zone_name || 'Local Ward'}</span>
                       </p>
                       <p className="text-[11px] text-slate-400 font-mono">
                         Logged: {new Date(issue.reported_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
+
+                  {/* Rejected Reason Banner */}
+                  {isRejected && (
+                    <div className="p-3 bg-rose-100 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-700 rounded-2xl text-xs text-rose-900 dark:text-rose-200 space-y-1">
+                      <div className="flex items-center space-x-1.5 font-extrabold text-rose-800 dark:text-rose-300 text-[11px]">
+                        <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+                        <span>AI Rejection Verdict:</span>
+                      </div>
+                      <p className="text-[11px] leading-relaxed">
+                        {issue.rejection_reason || issue.ai_description || 'No valid municipal defect detected. (e.g. human face, indoor room, or clean road)'}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
                   <div className="flex items-center space-x-1.5 text-slate-500 dark:text-slate-400">
-                    <Clock className="w-3.5 h-3.5 text-amber-500" />
-                    <span>
-                      {isResolved ? 'Resolved' : `${diffDays} days SLA remaining`}
-                    </span>
+                    {isRejected ? (
+                      <span className="text-rose-600 dark:text-rose-400 font-semibold text-[11px]">
+                        Not listed in public municipal dockets
+                      </span>
+                    ) : (
+                      <>
+                        <Clock className="w-3.5 h-3.5 text-amber-500" />
+                        <span>
+                          {isResolved ? 'Resolved' : `${diffDays} days SLA remaining`}
+                        </span>
+                      </>
+                    )}
                   </div>
-                  <Link
-                    href={`/track/${issue.complaint_number}`}
-                    className="inline-flex items-center space-x-1 text-[#1A56A4] dark:text-blue-400 hover:underline font-bold"
-                  >
-                    <span>View Docket</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+
+                  <div className="flex items-center space-x-2">
+                    {isRejected ? (
+                      <Link
+                        href="/report"
+                        className="inline-flex items-center space-x-1 text-rose-600 dark:text-rose-400 hover:underline font-bold"
+                      >
+                        <span>Re-file Photo</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    ) : (
+                      <Link
+                        href={`/track/${issue.complaint_number}`}
+                        className="inline-flex items-center space-x-1 text-[#1A56A4] dark:text-blue-400 hover:underline font-bold"
+                      >
+                        <span>View Docket</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
             );

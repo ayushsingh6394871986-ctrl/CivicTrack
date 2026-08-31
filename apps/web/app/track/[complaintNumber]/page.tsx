@@ -22,7 +22,10 @@ import {
   Loader2,
   Image as ImageIcon,
   Wrench,
-  Camera
+  Camera,
+  Target,
+  XCircle,
+  ShieldX
 } from 'lucide-react';
 import { getIssueByIdOrNumber, getStoredHistory, getStoredEvidence, upvoteIssue } from '@/lib/store';
 import { fetchIssueByNumber, fetchHistory, fetchEvidence } from '@/lib/db';
@@ -189,6 +192,44 @@ export default function TrackComplaintPage() {
         )}
       </div>
 
+      {/* Background AI Analysis Info Banner */}
+      {(justCreated || issue.ai_analysis_status === 'analyzing') && issue.status !== 'rejected' && (
+        <div className="p-4 bg-blue-950/60 border border-blue-500/50 rounded-2xl text-xs text-blue-200 flex items-start space-x-3 shadow-lg">
+          <Loader2 className="w-5 h-5 text-blue-400 shrink-0 mt-0.5 animate-spin" />
+          <div className="space-y-0.5">
+            <h4 className="font-extrabold text-blue-300 text-xs uppercase tracking-wider">
+              AI Verification Running in Background
+            </h4>
+            <p className="text-blue-200/90 leading-relaxed text-[11px]">
+              We are analyzing the image. If verified as a genuine defect, it will be prioritized and assigned to field crews; otherwise you can view details under <strong className="text-white">Rejected Reports</strong> in My Reports.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Rejected Grievance Banner */}
+      {issue.status === 'rejected' && (
+        <div className="p-4 bg-rose-950/60 border-2 border-rose-600 rounded-2xl text-xs text-rose-200 space-y-2 shadow-xl">
+          <div className="flex items-center space-x-2">
+            <XCircle className="w-5 h-5 text-rose-400 shrink-0" />
+            <h4 className="font-black text-rose-300 text-xs uppercase tracking-wider">
+              Grievance Rejected by AI Computer Vision Inspection
+            </h4>
+          </div>
+          <p className="text-rose-200/90 leading-relaxed text-xs">
+            {issue.rejection_reason || issue.ai_description || 'The vision model scanned this photo and determined NO valid public municipal defect is present.'}
+          </p>
+          <div className="pt-1">
+            <Link
+              href="/report"
+              className="inline-flex items-center space-x-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-md transition-all"
+            >
+              <span>File New Grievance with Clear Defect Photo →</span>
+            </Link>
+          </div>
+        </div>
+      )}
+
       {upvoteBanner && (
         <div className="p-3 bg-cyan-950/80 border border-cyan-500/40 text-xs font-semibold text-cyan-200 rounded-2xl flex items-center justify-between shadow-lg">
           <span>{upvoteBanner}</span>
@@ -218,7 +259,11 @@ export default function TrackComplaintPage() {
                 {issue.complaint_number}
               </span>
 
-              {isResolved ? (
+              {issue.status === 'rejected' ? (
+                <span className="bg-rose-950 text-rose-300 border border-rose-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                  <XCircle className="w-3.5 h-3.5 text-rose-400" /> AI Rejected (Non-Civic)
+                </span>
+              ) : isResolved ? (
                 <span className="bg-emerald-950 text-emerald-300 border border-emerald-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
                   <CheckCircle className="w-3.5 h-3.5" /> Resolved & Confirmed
                 </span>
@@ -232,7 +277,19 @@ export default function TrackComplaintPage() {
                 </span>
               )}
 
-              {issue.ai_severity !== undefined ? (
+              {/* Defect count / Pothole count badge */}
+              {issue.status !== 'rejected' && (issue.ai_count || issue.category === 'pothole') && (
+                <span className="bg-emerald-950 text-emerald-300 border border-emerald-700 text-xs font-mono-data font-bold px-3 py-1 rounded-full flex items-center space-x-1.5 shadow-sm">
+                  <Target className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>
+                    {issue.category === 'pothole'
+                      ? `${issue.ai_count || 1} Pothole${(issue.ai_count || 1) > 1 ? 's' : ''} Detected (YOLO)`
+                      : `Count: ${issue.ai_count || 1} Instances`}
+                  </span>
+                </span>
+              )}
+
+              {issue.ai_severity !== undefined && issue.status !== 'rejected' ? (
                 <span className={`text-xs font-mono-data font-bold px-3 py-1 rounded-full border flex items-center space-x-1 ${getSeverityBadgeClass(issue.ai_severity)}`}>
                   <ShieldAlert className="w-3.5 h-3.5" />
                   <span>Severity: {issue.ai_severity}/100</span>
@@ -240,13 +297,13 @@ export default function TrackComplaintPage() {
               ) : issue.ai_analysis_status === 'analyzing' ? (
                 <span className="text-xs font-semibold text-cyan-300 bg-cyan-950 border border-cyan-700 px-3 py-1 rounded-full flex items-center space-x-1">
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
-                  <span>YOLOv8 Inference Running...</span>
+                  <span>AI Inference Running...</span>
                 </span>
-              ) : (
+              ) : issue.status !== 'rejected' ? (
                 <span className="text-xs font-mono-data font-bold text-emerald-400 bg-emerald-950 border border-emerald-700/80 px-2.5 py-0.5 rounded-full">
                   {(issue.ai_confidence * 100).toFixed(1)}% AI Confirmed
                 </span>
-              )}
+              ) : null}
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight tracking-tight">{issue.title}</h1>

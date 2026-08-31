@@ -68,9 +68,7 @@ export function getStoredIssues(): CivicIssue[] {
     }
   }
 
-  // Filter out cancelled reports and reports explicitly flagged as non-defect by AI (severity === 0 means confirmed non-defect, undefined means not yet analyzed — keep those)
-  issues = issues.filter((issue) => (issue.status as string) !== 'cancelled' && issue.ai_severity !== 0);
-
+  // Ensure items are parsed and check 45-day escalations
   const { issues: checkedIssues, updated } = checkAndTrigger45DayEscalations(issues);
   if (updated) {
     saveStoredIssues(checkedIssues);
@@ -372,52 +370,59 @@ export function updateIssueAiResults(issueId: string, apiResult: AnalyzeApiRespo
 
   const current = issues[index];
 
-  // 🚫 IF AI CANCELLED / FALSE / ERROR (apiResult.detected === false or count === 0 or severity === 0)
-  if (apiResult.detected === false || apiResult.count === 0 || apiResult.severity === 0) {
-    // Unlist & delete the report automatically!
-    deleteIssue(current.id);
+  // 🚫 IF AI REJECTED / INVALID / CLEAN SURFACE
+  if (apiResult.detected === false || (apiResult.severity !== undefined && apiResult.severity === 0)) {
+    const rejectionReason = apiResult.rejection_reason || apiResult.description || 'Photo rejected: No valid municipal infrastructure defect identified in uploaded image.';
+    const rejectedIssue: CivicIssue = {
+      ...current,
+      status: 'rejected',
+      ai_analysis_status: 'failed',
+      ai_severity: 0,
+      ai_count: 0,
+      rejection_reason: rejectionReason,
+      ai_description: rejectionReason,
+    };
+    issues[index] = rejectedIssue;
+    saveStoredIssues(issues);
 
-    // Save cancellation notification
+    // Save notification
     const notifs = getStoredNotifications();
     const cancelNotif: NotificationItem = {
       id: `notif-cancel-${Date.now()}`,
       type: 'escalation',
-      title: '🚫 Report Cancelled by AI',
-      message: `Docket ${current.complaint_number} was automatically cancelled: AI vision model scanned the photo and detected NO valid civic defect.`,
+      title: '🚫 Grievance Rejected by AI Verification',
+      message: `Docket ${current.complaint_number}: ${rejectionReason}`,
       complaint_number: current.complaint_number,
       read: false,
       created_at: new Date().toISOString(),
     };
     saveStoredNotifications([cancelNotif, ...notifs]);
 
-    // Save cancellation history
+    // Save status history
     const history = getStoredHistory();
     saveStoredHistory([
       ...history,
       {
-        id: `h-cancel-${Date.now()}`,
+        id: `h-reject-${Date.now()}`,
         issue_id: current.id,
-        new_status: 'cancelled' as any,
-        changed_by: 'YOLOv8 AI Verification Service',
-        department_note: `REPORT CANCELLED: AI model scanned photo and determined NO valid civic defect (${current.category}). Ticket unlisted.`,
+        new_status: 'rejected',
+        changed_by: 'CivicTrack Computer Vision Auditor',
+        department_note: `REPORT REJECTED: ${rejectionReason}`,
         created_at: new Date().toISOString(),
       },
     ]);
 
-    return {
-      ...current,
-      status: 'cancelled' as any,
-      ai_analysis_status: 'failed',
-    };
+    return rejectedIssue;
   }
 
   const updated: CivicIssue = {
     ...current,
     ai_analysis_status: 'completed',
     ai_severity: apiResult.severity,
-    ai_count: apiResult.count,
+    ai_count: apiResult.count || (apiResult.detections ? apiResult.detections.length : 1),
     ai_detections: apiResult.detections || [],
     ai_description: apiResult.description,
+    ai_detected_class: apiResult.issue_type ? apiResult.issue_type.toUpperCase() : current.ai_detected_class,
     ai_confidence: apiResult.detections?.[0]?.confidence ?? current.ai_confidence ?? 0.95,
   };
 

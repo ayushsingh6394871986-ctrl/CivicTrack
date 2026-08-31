@@ -45,7 +45,8 @@ export type IssueStatus =
   | 'assigned'
   | 'in_progress'
   | 'resolved'
-  | 'reopened';
+  | 'reopened'
+  | 'rejected';
 
 export type AiAnalysisStatus = 'pending' | 'analyzing' | 'completed' | 'failed';
 
@@ -76,6 +77,7 @@ export interface CivicIssue {
   ai_count?: number;
   ai_detections?: AiDetectionBox[];
   ai_description?: string;
+  rejection_reason?: string;
   latitude: number;
   longitude: number;
   status: IssueStatus;

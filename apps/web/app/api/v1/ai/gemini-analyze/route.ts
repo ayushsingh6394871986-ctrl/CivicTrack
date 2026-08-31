@@ -9,6 +9,7 @@ interface GeminiAnalyzeRequest {
 interface GeminiAnalyzeResponse {
   detected: boolean;
   is_civic_issue: boolean;
+  count: number;
   severity: number;
   confidence: number;
   issue_type: string;
@@ -20,7 +21,7 @@ interface GeminiAnalyzeResponse {
 export async function POST(req: NextRequest) {
   try {
     const body: GeminiAnalyzeRequest = await req.json();
-    const { image, issueType = 'other', description = '' } = body;
+    const { image, issueType = 'pothole', description = '' } = body;
 
     if (!image) {
       return NextResponse.json(
@@ -53,26 +54,24 @@ Your job is to inspect the submitted photo with HIGH PRECISION and determine whe
 
 STRICT CLASSIFICATION RULES:
 
-1. REJECT INVALID / NON-CIVIC IMAGES (MUST RETURN detected: false, is_civic_issue: false, severity: 0):
-- Human selfies, human faces, portraits, people, bodies, clothing.
-- Indoor domestic rooms (bedrooms, living rooms, kitchens, offices, ceilings, tiles).
-- Handwritten or printed papers, documents, books, notebooks, ID cards, receipts.
-- Electronic screens, laptops, phones, computer monitors.
-- Food, beverages, plates, snacks.
-- Pets, domestic animals.
+1. REJECT INVALID / NON-CIVIC / CLEAN IMAGES (MUST RETURN detected: false, is_civic_issue: false, count: 0, severity: 0):
+- Human selfies, human faces, portraits, people, bodies, clothing, hands, pets, animals.
+- Indoor domestic rooms (bedrooms, living rooms, kitchens, offices, ceilings, tiles, furniture).
+- Handwritten or printed papers, documents, books, notebooks, ID cards, receipts, screens.
 - Clean, undamaged, smooth pavements or roads with zero defects.
-- Random objects (chairs, bags, pens, shoes, walls).
-For ANY of the above:
+- Random household objects (chairs, bags, pens, shoes, indoor walls).
+For ANY non-civic or non-defect image:
   "detected": false,
   "is_civic_issue": false,
+  "count": 0,
   "severity": 0,
   "confidence": 0.0,
   "issue_type": "invalid_non_defect",
   "description": "Non-civic image detected (e.g. person, indoor room, paper, or non-infrastructure object). No municipal defect found.",
-  "rejection_reason": "No valid public infrastructure defect detected in this photo.",
+  "rejection_reason": "Photo rejected: No valid municipal infrastructure defect was identified in this image. Please upload a clear photo of the actual civic problem.",
   "hazards_detected": []
 
-2. ACCEPT ONLY REAL MUNICIPAL DEFECTS (MUST RETURN detected: true, is_civic_issue: true):
+2. ACCEPT REAL MUNICIPAL DEFECTS (MUST RETURN detected: true, is_civic_issue: true):
 Inspect and assign the EXACT matching category from this list:
 - "pothole": Road crater, asphalt cavity, broken tarmac depression, gravel pit in street.
 - "garbage": Open municipal waste heap, overflowing public dumpster, scattered trash on street.
@@ -85,8 +84,14 @@ Inspect and assign the EXACT matching category from this list:
 - "manhole": Open, uncovered, or shattered sewer manhole chamber.
 - "dead_animal": Animal carcass on public street requiring sanitary disposal.
 - "overgrown_bushes": Wild vegetation blocking pedestrian walkway or street visibility.
+- "road_damage": Structural asphalt subsidence, sinkhole, heavy cracked surface.
 
-3. SEVERITY RATING (1 to 100):
+3. COUNT (INTEGER):
+- For "pothole": Count the exact number of distinct potholes/cavities visible in the image (e.g. 1, 2, 3, etc.).
+- For "garbage": Count the number of trash accumulation spots or bins (default 1).
+- For other defects: Count the visible defect instances (default 1).
+
+4. SEVERITY RATING (1 to 100):
 - 1-35: Minor superficial damage, low risk.
 - 36-65: Moderate defect, noticeable inconvenience.
 - 66-85: High severity (deep cavity, water logging, broken street lighting at night).
@@ -96,6 +101,7 @@ Respond ONLY with a valid JSON object without markdown formatting:
 {
   "detected": boolean,
   "is_civic_issue": boolean,
+  "count": number,
   "severity": number,
   "confidence": number,
   "issue_type": string,
@@ -107,9 +113,10 @@ Respond ONLY with a valid JSON object without markdown formatting:
       try {
         // High-precision multimodal vision models supported by Google Gemini
         const models = [
-          'gemini-3.6-flash',
-          'gemini-3.5-flash',
-          'gemini-2.5-flash-lite',
+          'gemini-2.5-flash',
+          'gemini-2.0-flash',
+          'gemini-1.5-flash',
+          'gemini-1.5-pro',
         ];
         let geminiResponse: any = null;
 
@@ -155,14 +162,17 @@ Respond ONLY with a valid JSON object without markdown formatting:
           const cleanedText = rawText.replace(/```json\n?|\n?```/g, '').trim();
           const parsedData: GeminiAnalyzeResponse = JSON.parse(cleanedText);
 
-          return NextResponse.json(parsedData);
+          return NextResponse.json({
+            ...parsedData,
+            count: typeof parsedData.count === 'number' && parsedData.count > 0 ? parsedData.count : (parsedData.detected ? 1 : 0),
+          });
         }
       } catch (geminiErr) {
         console.error('Gemini Vision API call failed, falling back to local verifier:', geminiErr);
       }
     }
 
-    // ── Edge Fallback when API key is rate-limited or offline ────────────────
+    // ── Edge Fallback when API key is offline ────────────────────────────────
     const categoryBaseRisk: Record<string, number> = {
       pothole: 78,
       permanent_broken_streetlight: 76,
@@ -185,6 +195,7 @@ Respond ONLY with a valid JSON object without markdown formatting:
     return NextResponse.json({
       detected: true,
       is_civic_issue: true,
+      count: 1,
       severity: defaultSeverity,
       confidence: 0.94,
       issue_type: issueType,

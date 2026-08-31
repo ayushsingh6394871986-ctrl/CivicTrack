@@ -213,6 +213,7 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
         is_civic_issue: false,
         detected_class: 'Clean Road Surface (No Defect)',
         confidence: 0.0,
+        count: 0,
         label: '0.0% Confidence (No Defect Found)',
         category: (selectedCategory as any) || 'pothole',
         message: 'AI scanned photo and determined NO civic defect is present. Report cancelled.',
@@ -240,13 +241,15 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
 
       const isDefect = Boolean(liveData.detected && liveData.severity > 0);
       const recognizedCat = liveData.issue_type && liveData.issue_type !== 'invalid_non_defect' ? liveData.issue_type : targetCategory;
+      const defectCount = isDefect ? (liveData.count || 1) : 0;
 
       const realResult: DetectionResult = {
         is_civic_issue: isDefect,
         detected_class: isDefect ? recognizedCat.toUpperCase() : 'Non-Civic Image (Rejected)',
         confidence: liveData.detections?.[0]?.confidence ?? (isDefect ? 0.95 : 0.0),
+        count: defectCount,
         label: isDefect
-          ? `${((liveData.detections?.[0]?.confidence ?? 0.95) * 100).toFixed(1)}% AI Confidence`
+          ? `${((liveData.detections?.[0]?.confidence ?? 0.95) * 100).toFixed(1)}% AI Confidence (${defectCount} Detected)`
           : '0.0% AI Confidence (Non-Defect Rejected)',
         category: (recognizedCat as any) || 'pothole',
         message: liveData.description || (isDefect ? `Verified ${recognizedCat} defect identified.` : 'Photo does not contain a valid municipal infrastructure defect.'),
@@ -261,6 +264,7 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
         is_civic_issue: !isClean,
         detected_class: !isClean ? targetCategory.toUpperCase() : 'Clean Surface (No Defect)',
         confidence: !isClean ? 0.90 : 0.0,
+        count: !isClean ? 1 : 0,
         label: !isClean ? '90.0% AI Confidence' : '0.0% Confidence',
         category: (targetCategory as any) || 'pothole',
         message: !isClean ? `Infrastructure problem registered.` : 'No civic defect found.',
