@@ -374,8 +374,9 @@ export default function MyComplaintsPage() {
             const diffDays = Math.ceil((deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
             const isResolved = issue.status === 'resolved';
             const isRejected = issue.status === 'rejected';
-            const isAnalyzing = issue.ai_analysis_status === 'analyzing';
-            const potholeCount = issue.ai_count || (issue.category === 'pothole' ? 1 : undefined);
+            const isAnalyzing = issue.ai_analysis_status === 'analyzing' || (issue.status === 'pending' && issue.ai_severity === undefined);
+            const isPothole = issue.category === 'pothole';
+            const potholeCount = isPothole && !isAnalyzing && !isRejected && issue.ai_count && issue.ai_count > 0 ? issue.ai_count : undefined;
 
             return (
               <div
@@ -407,14 +408,12 @@ export default function MyComplaintsPage() {
                         </span>
                       )}
 
-                      {/* Defect count / Pothole count badge */}
-                      {potholeCount && !isRejected && (
+                      {/* Pothole count badge - ONLY for potholes */}
+                      {potholeCount && (
                         <span className="text-[10px] font-mono font-extrabold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 flex items-center space-x-1">
                           <Target className="w-3 h-3 text-emerald-600" />
                           <span>
-                            {issue.category === 'pothole'
-                              ? `${potholeCount} Pothole${potholeCount > 1 ? 's' : ''}`
-                              : `Count: ${potholeCount}`}
+                            {potholeCount} Pothole{potholeCount > 1 ? 's' : ''}
                           </span>
                         </span>
                       )}

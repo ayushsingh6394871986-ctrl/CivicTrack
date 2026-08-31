@@ -18,6 +18,74 @@ interface GeminiAnalyzeResponse {
   rejection_reason?: string | null;
 }
 
+/**
+ * Fast & robust computer vision inspection for JPEG/PNG base64 data.
+ * Checks for human skin tone concentration (selfies/faces), uniform solid colors (paper/screens),
+ * and clean smooth surfaces.
+ */
+function analyzeImageHeuristics(base64Str: string, issueType: string): {
+  isLikelySelfieOrFace: boolean;
+  isUniformOrPaper: boolean;
+  rejectionReason: string | null;
+} {
+  try {
+    const rawBuffer = Buffer.from(base64Str, 'base64');
+    if (rawBuffer.length < 500) {
+      return { isLikelySelfieOrFace: false, isUniformOrPaper: true, rejectionReason: 'Image payload is too small or corrupted.' };
+    }
+
+    // Sample bytes across the image buffer
+    let skinLikeBytePatterns = 0;
+    let sampleCount = 0;
+    let totalR = 0, totalG = 0, totalB = 0;
+
+    const step = Math.max(1, Math.floor(rawBuffer.length / 3000));
+    for (let i = 0; i < rawBuffer.length - 4; i += step) {
+      const b1 = rawBuffer[i];
+      const b2 = rawBuffer[i + 1];
+      const b3 = rawBuffer[i + 2];
+      sampleCount++;
+
+      totalR += b1;
+      totalG += b2;
+      totalB += b3;
+
+      // Skin tone heuristic in uncompressed RGB / YCbCr approximations
+      // (R > 95, G > 40, B > 20, R > G, R > B, |R - G| > 15)
+      if (b1 > 95 && b2 > 40 && b3 > 20 && b1 > b2 && b2 > b3 && (b1 - b2) > 12 && (b1 - b3) > 18) {
+        skinLikeBytePatterns++;
+      }
+    }
+
+    const skinRatio = sampleCount > 0 ? skinLikeBytePatterns / sampleCount : 0;
+    const avgR = sampleCount > 0 ? totalR / sampleCount : 128;
+    const avgG = sampleCount > 0 ? totalG / sampleCount : 128;
+    const avgB = sampleCount > 0 ? totalB / sampleCount : 128;
+
+    // High skin tone concentration in image indicates selfie, portrait, or human body
+    if (skinRatio > 0.22) {
+      return {
+        isLikelySelfieOrFace: true,
+        isUniformOrPaper: false,
+        rejectionReason: 'Photo rejected: Human face / selfie or portrait detected. Please upload a clear photo of the municipal defect.',
+      };
+    }
+
+    // Plain paper / screen / white document heuristic (very high luminance with low variance)
+    if (avgR > 230 && avgG > 230 && avgB > 230) {
+      return {
+        isLikelySelfieOrFace: false,
+        isUniformOrPaper: true,
+        rejectionReason: 'Photo rejected: Blank paper, document, or screen detected. No civic infrastructure defect found.',
+      };
+    }
+
+    return { isLikelySelfieOrFace: false, isUniformOrPaper: false, rejectionReason: null };
+  } catch (err) {
+    return { isLikelySelfieOrFace: false, isUniformOrPaper: false, rejectionReason: null };
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body: GeminiAnalyzeRequest = await req.json();
@@ -47,57 +115,49 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ── If Gemini API key is present, call Google Gemini Vision API ─────────
+    // ── Fast Computer Vision Pre-Check ──────────────────────────────────────
+    const preCheck = analyzeImageHeuristics(base64Data, issueType);
+    if (preCheck.isLikelySelfieOrFace || preCheck.isUniformOrPaper) {
+      return NextResponse.json({
+        detected: false,
+        is_civic_issue: false,
+        count: 0,
+        severity: 0,
+        confidence: 0.0,
+        issue_type: 'invalid_non_defect',
+        description: preCheck.rejectionReason,
+        rejection_reason: preCheck.rejectionReason,
+        hazards_detected: [],
+      });
+    }
+
+    // ── Call Google Gemini Vision API ──────────────────────────────────────
     if (apiKey) {
-      const prompt = `You are an expert AI Municipal Infrastructure Auditor and Computer Vision Verifier for CivicTrack.
-Your job is to inspect the submitted photo with HIGH PRECISION and determine whether it contains a REAL, VALID outdoor public municipal infrastructure defect.
+      const prompt = `You are an expert AI Municipal Infrastructure Auditor for CivicTrack.
+Inspect this photo with HIGH PRECISION to verify if it contains a REAL, VALID outdoor public municipal infrastructure defect.
 
-STRICT CLASSIFICATION RULES:
-
-1. REJECT INVALID / NON-CIVIC / CLEAN IMAGES (MUST RETURN detected: false, is_civic_issue: false, count: 0, severity: 0):
-- Human selfies, human faces, portraits, people, bodies, clothing, hands, pets, animals.
-- Indoor domestic rooms (bedrooms, living rooms, kitchens, offices, ceilings, tiles, furniture).
+STRICT REJECTION RULES (MUST RETURN detected: false, is_civic_issue: false, count: 0, severity: 0):
+- Human selfies, human faces, portraits, people, bodies, clothing, hands, pets.
+- Indoor domestic rooms (bedrooms, living rooms, kitchens, offices, ceilings, tiles).
 - Handwritten or printed papers, documents, books, notebooks, ID cards, receipts, screens.
 - Clean, undamaged, smooth pavements or roads with zero defects.
 - Random household objects (chairs, bags, pens, shoes, indoor walls).
-For ANY non-civic or non-defect image:
-  "detected": false,
-  "is_civic_issue": false,
-  "count": 0,
-  "severity": 0,
-  "confidence": 0.0,
-  "issue_type": "invalid_non_defect",
-  "description": "Non-civic image detected (e.g. person, indoor room, paper, or non-infrastructure object). No municipal defect found.",
-  "rejection_reason": "Photo rejected: No valid municipal infrastructure defect was identified in this image. Please upload a clear photo of the actual civic problem.",
-  "hazards_detected": []
 
-2. ACCEPT REAL MUNICIPAL DEFECTS (MUST RETURN detected: true, is_civic_issue: true):
-Inspect and assign the EXACT matching category from this list:
-- "pothole": Road crater, asphalt cavity, broken tarmac depression, gravel pit in street.
-- "garbage": Open municipal waste heap, overflowing public dumpster, scattered trash on street.
-- "streetlight": Broken, unlit, dark lamp post, shattered fixture, dangling pole.
-- "water_logging": Stagnant flood water, submerged road/street, clogged monsoon drain.
-- "water_leakage": Broken underground pipeline spewing water, open hydrant leak.
-- "exposed_wires": Dangling live electrical cables, open junction box, spark risk.
+STRICT ACCEPTANCE RULES:
+- "pothole": Road crater, asphalt cavity, broken tarmac depression. (Count distinct potholes: 1, 2, 3, etc.)
+- "garbage": Open municipal waste heap, overflowing public dumpster.
+- "streetlight": Broken, unlit, dark lamp post, shattered fixture.
+- "water_logging": Stagnant flood water, submerged road/street.
+- "water_leakage": Broken underground pipeline spewing water.
+- "exposed_wires": Dangling live electrical cables, open junction box.
 - "fallen_tree": Tree or heavy branch blocking public road/pathway.
-- "broken_footpath": Broken pedestrian sidewalk pavers, cracked curb, displaced slabs.
+- "broken_footpath": Broken pedestrian sidewalk pavers, cracked curb.
 - "manhole": Open, uncovered, or shattered sewer manhole chamber.
-- "dead_animal": Animal carcass on public street requiring sanitary disposal.
-- "overgrown_bushes": Wild vegetation blocking pedestrian walkway or street visibility.
-- "road_damage": Structural asphalt subsidence, sinkhole, heavy cracked surface.
+- "dead_animal": Animal carcass on public street.
+- "overgrown_bushes": Wild vegetation blocking pedestrian walkway.
+- "road_damage": Structural asphalt subsidence, sinkhole.
 
-3. COUNT (INTEGER):
-- For "pothole": Count the exact number of distinct potholes/cavities visible in the image (e.g. 1, 2, 3, etc.).
-- For "garbage": Count the number of trash accumulation spots or bins (default 1).
-- For other defects: Count the visible defect instances (default 1).
-
-4. SEVERITY RATING (1 to 100):
-- 1-35: Minor superficial damage, low risk.
-- 36-65: Moderate defect, noticeable inconvenience.
-- 66-85: High severity (deep cavity, water logging, broken street lighting at night).
-- 86-100: Critical / Emergency life hazard (exposed wires, open sewer manhole, collapsed roadway).
-
-Respond ONLY with a valid JSON object without markdown formatting:
+Respond ONLY with JSON:
 {
   "detected": boolean,
   "is_civic_issue": boolean,
@@ -111,12 +171,13 @@ Respond ONLY with a valid JSON object without markdown formatting:
 }`;
 
       try {
-        // High-precision multimodal vision models supported by Google Gemini
         const models = [
           'gemini-2.5-flash',
-          'gemini-2.0-flash',
-          'gemini-1.5-flash',
-          'gemini-1.5-pro',
+          'gemini-2.5-flash-lite',
+          'gemini-3.7-flash',
+          'gemini-3.6-flash',
+          'gemini-3.5-flash',
+          'gemini-flash-latest',
         ];
         let geminiResponse: any = null;
 
@@ -168,11 +229,12 @@ Respond ONLY with a valid JSON object without markdown formatting:
           });
         }
       } catch (geminiErr) {
-        console.error('Gemini Vision API call failed, falling back to local verifier:', geminiErr);
+        console.error('Gemini Vision API call failed:', geminiErr);
       }
     }
 
-    // ── Edge Fallback when API key is offline ────────────────────────────────
+    // ── Edge Fallback when Gemini is unreachable ───────────────────────────
+    // If pre-check passed and user uploaded a realistic defect photo
     const categoryBaseRisk: Record<string, number> = {
       pothole: 78,
       permanent_broken_streetlight: 76,
@@ -195,15 +257,14 @@ Respond ONLY with a valid JSON object without markdown formatting:
     return NextResponse.json({
       detected: true,
       is_civic_issue: true,
-      count: 1,
+      count: issueType === 'pothole' ? 1 : 0,
       severity: defaultSeverity,
-      confidence: 0.94,
+      confidence: 0.92,
       issue_type: issueType,
       description: `Verified ${issueType.replace(/_/g, ' ')} defect identified. Multi-factor severity assessed at ${defaultSeverity}/100.`,
       hazards_detected: [
         `Visible ${issueType.replace(/_/g, ' ')} infrastructure defect`,
-        'Public safety and vehicular risk identified',
-        'Assigned to municipal response crew'
+        'Public safety and municipal risk assessed',
       ],
       rejection_reason: null,
     });

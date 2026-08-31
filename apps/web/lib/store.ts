@@ -203,7 +203,7 @@ export function addIssue(issue: CivicIssue): CivicIssue {
     issue_id: issue.id,
     new_status: 'pending',
     changed_by: 'System / Citizen Reporter',
-    department_note: `Ticket created. AI validation (${(issue.ai_confidence * 100).toFixed(1)}% confidence) confirmed infrastructure defect. Target SLA set to 15 days.`,
+    department_note: `Ticket created. AI validation (${((issue.ai_confidence ?? 0.95) * 100).toFixed(1)}% confidence) confirmed infrastructure defect. Target SLA set to 15 days.`,
     created_at: new Date().toISOString(),
   };
   saveStoredHistory([...history, newHist]);
@@ -435,11 +435,12 @@ export function updateIssueAiResults(issueId: string, apiResult: AnalyzeApiRespo
     return rejectedIssue;
   }
 
+  const isPothole = current.category === 'pothole';
   const updated: CivicIssue = {
     ...current,
     ai_analysis_status: 'completed',
     ai_severity: apiResult.severity,
-    ai_count: apiResult.count || (apiResult.detections ? apiResult.detections.length : 1),
+    ai_count: isPothole ? (apiResult.count || (apiResult.detections ? apiResult.detections.length : 1)) : undefined,
     ai_detections: apiResult.detections || [],
     ai_description: apiResult.description,
     ai_detected_class: apiResult.issue_type ? apiResult.issue_type.toUpperCase() : current.ai_detected_class,

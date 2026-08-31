@@ -70,7 +70,7 @@ export interface CivicIssue {
   description: string;
   photo_url: string;
   additional_photos?: string[];
-  ai_confidence: number;
+  ai_confidence?: number;
   ai_detected_class: string;
   ai_analysis_status?: AiAnalysisStatus;
   ai_severity?: number;

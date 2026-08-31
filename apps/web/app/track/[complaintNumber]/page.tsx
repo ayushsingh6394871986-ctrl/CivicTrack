@@ -193,7 +193,7 @@ export default function TrackComplaintPage() {
       </div>
 
       {/* Background AI Analysis Info Banner */}
-      {(justCreated || issue.ai_analysis_status === 'analyzing') && issue.status !== 'rejected' && (
+      {issue.ai_analysis_status === 'analyzing' && issue.status !== 'rejected' && (
         <div className="p-4 bg-blue-950/60 border border-blue-500/50 rounded-2xl text-xs text-blue-200 flex items-start space-x-3 shadow-lg">
           <Loader2 className="w-5 h-5 text-blue-400 shrink-0 mt-0.5 animate-spin" />
           <div className="space-y-0.5">
@@ -271,35 +271,35 @@ export default function TrackComplaintPage() {
                 <span className="bg-amber-950 text-amber-300 border border-amber-600 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
                   <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> Overdue
                 </span>
+              ) : issue.ai_analysis_status === 'analyzing' ? (
+                <span className="text-xs font-semibold text-purple-300 bg-purple-950 border border-purple-700 px-3 py-1 rounded-full flex items-center space-x-1">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
+                  <span>AI Analyzing Photo...</span>
+                </span>
               ) : (
                 <span className="bg-cyan-950 text-cyan-300 border border-cyan-700 text-xs font-bold px-3 py-1 rounded-full capitalize">
                   {issue.status.replace('_', ' ')}
                 </span>
               )}
 
-              {/* Defect count / Pothole count badge */}
-              {issue.status !== 'rejected' && (issue.ai_count || issue.category === 'pothole') && (
+              {/* Pothole count badge - STRICTLY FOR POTHOLES ONLY WHEN ANALYSIS IS COMPLETED */}
+              {issue.category === 'pothole' && issue.status !== 'rejected' && issue.ai_analysis_status !== 'analyzing' && issue.ai_count && issue.ai_count > 0 ? (
                 <span className="bg-emerald-950 text-emerald-300 border border-emerald-700 text-xs font-mono-data font-bold px-3 py-1 rounded-full flex items-center space-x-1.5 shadow-sm">
                   <Target className="w-3.5 h-3.5 text-emerald-400" />
                   <span>
-                    {issue.category === 'pothole'
-                      ? `${issue.ai_count || 1} Pothole${(issue.ai_count || 1) > 1 ? 's' : ''} Detected (YOLO)`
-                      : `Count: ${issue.ai_count || 1} Instances`}
+                    {issue.ai_count} Pothole{issue.ai_count > 1 ? 's' : ''} Detected (YOLO)
                   </span>
                 </span>
-              )}
+              ) : null}
 
-              {issue.ai_severity !== undefined && issue.status !== 'rejected' ? (
+              {issue.status !== 'rejected' && issue.ai_analysis_status !== 'analyzing' && issue.ai_severity !== undefined ? (
                 <span className={`text-xs font-mono-data font-bold px-3 py-1 rounded-full border flex items-center space-x-1 ${getSeverityBadgeClass(issue.ai_severity)}`}>
                   <ShieldAlert className="w-3.5 h-3.5" />
                   <span>Severity: {issue.ai_severity}/100</span>
                 </span>
-              ) : issue.ai_analysis_status === 'analyzing' ? (
-                <span className="text-xs font-semibold text-cyan-300 bg-cyan-950 border border-cyan-700 px-3 py-1 rounded-full flex items-center space-x-1">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
-                  <span>AI Inference Running...</span>
-                </span>
-              ) : issue.status !== 'rejected' ? (
+              ) : null}
+
+              {issue.status !== 'rejected' && issue.ai_analysis_status !== 'analyzing' && issue.ai_confidence ? (
                 <span className="text-xs font-mono-data font-bold text-emerald-400 bg-emerald-950 border border-emerald-700/80 px-2.5 py-0.5 rounded-full">
                   {(issue.ai_confidence * 100).toFixed(1)}% AI Confirmed
                 </span>

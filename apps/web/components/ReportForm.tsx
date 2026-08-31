@@ -245,7 +245,9 @@ export default function ReportForm() {
       const userReporterEmail = user?.email || undefined;
       const userReporterName = user?.displayName || user?.email?.split('@')[0] || 'Verified Citizen';
 
+      const isPothole = category === 'pothole';
       const isAlreadyRejected = liveApiData && (!liveApiData.detected || liveApiData.severity === 0);
+      const isAnalyzing = !liveApiData;
 
       const newIssue: CivicIssue = {
         id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `issue-${Date.now()}`,
@@ -261,13 +263,13 @@ export default function ReportForm() {
         description: description || `Civic issue reported via live camera at ${zoneName}.`,
         photo_url: photoFinal,
         additional_photos: photoFinal ? [photoFinal] : [],
-        ai_confidence: liveApiData?.detections?.[0]?.confidence ?? aiResult?.confidence ?? 0.95,
-        ai_detected_class: liveApiData?.issue_type ? liveApiData.issue_type.toUpperCase() : (aiResult?.detected_class || category.toUpperCase()),
-        ai_analysis_status: liveApiData ? (isAlreadyRejected ? 'failed' : 'completed') : 'analyzing',
-        ai_severity: liveApiData?.severity,
-        ai_count: liveApiData?.count || (liveApiData?.detections ? liveApiData.detections.length : 1),
-        ai_detections: liveApiData?.detections,
-        ai_description: liveApiData?.description,
+        ai_confidence: isAnalyzing ? undefined : (liveApiData?.detections?.[0]?.confidence ?? 0.95),
+        ai_detected_class: isAnalyzing ? category.toUpperCase() : (liveApiData?.issue_type ? liveApiData.issue_type.toUpperCase() : category.toUpperCase()),
+        ai_analysis_status: isAnalyzing ? 'analyzing' : (isAlreadyRejected ? 'failed' : 'completed'),
+        ai_severity: isAnalyzing ? undefined : liveApiData?.severity,
+        ai_count: isAnalyzing ? undefined : (isPothole && liveApiData?.count ? liveApiData.count : undefined),
+        ai_detections: isAnalyzing ? undefined : liveApiData?.detections,
+        ai_description: isAnalyzing ? undefined : liveApiData?.description,
         rejection_reason: isAlreadyRejected ? (liveApiData?.rejection_reason || liveApiData?.description) : undefined,
         latitude,
         longitude,

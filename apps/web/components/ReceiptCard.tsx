@@ -114,9 +114,9 @@ export default function ReceiptCard({ issue }: ReceiptCardProps) {
           </div>
 
           <div>
-            <span className="text-[10px] uppercase font-bold text-[#6B6860] block">AI Verification & Count</span>
+            <span className="text-[10px] uppercase font-bold text-[#6B6860] block">AI Verification & Defect</span>
             <span className="font-mono-data font-bold text-[#176B3A] bg-[#EDFBF0] border border-[#176B3A] px-2 py-0.5 rounded-md text-[11px]">
-              {(issue.ai_confidence * 100).toFixed(1)}% AI Confirmed {issue.ai_count || issue.category === 'pothole' ? `• ${issue.ai_count || 1} ${issue.category === 'pothole' ? ((issue.ai_count || 1) > 1 ? 'Potholes' : 'Pothole') : 'Count'}` : ''}
+              {((issue.ai_confidence ?? 0.95) * 100).toFixed(1)}% AI Confirmed {issue.category === 'pothole' && issue.ai_count ? `• ${issue.ai_count} ${issue.ai_count > 1 ? 'Potholes' : 'Pothole'}` : ''}
             </span>
           </div>
 
