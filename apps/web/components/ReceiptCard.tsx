@@ -76,10 +76,10 @@ export default function ReceiptCard({ issue }: ReceiptCardProps) {
         <div className="flex items-start justify-between border-b border-[#C9C4BA] pb-4">
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-xl bg-[#D95F02] flex items-center justify-center text-slate-950 font-bold text-xs">
+              <div className="w-8 h-8 rounded-xl bg-[#D95F02] flex items-center justify-center text-white font-bold text-xs">
                 <Shield className="w-4 h-4" />
               </div>
-              <span className="font-extrabold text-base tracking-tight text-white">CivicTrack</span>
+              <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white">CivicTrack</span>
             </div>
             <p className="text-[10px] text-[#6B6860] font-medium">
               Official Grievance Registration Receipt • Municipal Wards

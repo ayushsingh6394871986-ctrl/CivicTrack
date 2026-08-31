@@ -80,7 +80,7 @@ export default function HomePage() {
           </h1>
 
           <p className="text-sm sm:text-base text-[#6B6860] leading-relaxed max-w-3xl font-medium">
-            Edge computer vision validation via YOLOv8, PostGIS ward spatial routing, 15-day SLA compliance countdowns, 500-upvote emergency compression, and citizen-verified photo closure.
+            AI computer vision validation, PostGIS ward spatial routing, 15-day SLA compliance countdowns, 500-upvote emergency compression, and citizen-verified photo closure.
           </p>
 
           {/* Primary Actions */}
@@ -133,7 +133,7 @@ export default function HomePage() {
               <span>Registered Dockets</span><FileCheck className="w-4 h-4" />
             </div>
             <div className="text-3xl font-extrabold text-[#1E2328] font-mono-data">{metrics.total_issues}</div>
-            <p className="text-[11px] text-[#6B6860] font-medium">YOLOv8 Edge Validated</p>
+            <p className="text-[11px] text-[#6B6860] font-medium">AI Computer Vision Validated</p>
           </div>
 
           <div className="bg-white border-2 border-[#C9C4BA] rounded-xl p-5 shadow-sm space-y-1">

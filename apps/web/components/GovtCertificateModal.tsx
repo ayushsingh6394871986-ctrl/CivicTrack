@@ -144,7 +144,9 @@ export default function GovtCertificateModal({
           <div className="grid grid-cols-3 gap-3 pt-2">
             <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
               <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold block">Quarterly Rank</span>
-              <span className="text-base font-black text-amber-600 dark:text-amber-400">#1 Gold Medal</span>
+              <span className="text-base font-black text-amber-600 dark:text-amber-400">
+                #{certificate.rank} {certificate.rank === 1 ? 'Gold Medal' : certificate.rank === 2 ? 'Silver Medal' : 'Bronze Medal'}
+              </span>
             </div>
             <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
               <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold block">Issues Resolved</span>
